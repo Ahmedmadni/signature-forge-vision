@@ -1,3 +1,6 @@
+import "@fontsource-variable/space-grotesk";
+import "@fontsource-variable/inter";
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -11,12 +14,15 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { ThemeProvider, themeInitScript } from "../lib/theme";
+import { Toaster } from "@/components/ui/sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
+        <h1 className="font-display text-7xl font-bold text-gradient">404</h1>
         <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           The page you're looking for doesn't exist or has been moved.
@@ -24,7 +30,7 @@ function NotFoundComponent() {
         <div className="mt-6">
           <Link
             to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="inline-flex items-center justify-center rounded-md bg-gradient-brand px-4 py-2 text-sm font-medium text-primary-foreground shadow-glow"
           >
             Go home
           </Link>
@@ -44,26 +50,18 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn't load
-        </h1>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">This page didn't load</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Something went wrong on our end. You can try refreshing or head back home.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
-            onClick={() => {
-              router.invalidate();
-              reset();
-            }}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            onClick={() => { router.invalidate(); reset(); }}
+            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
           >
             Try again
           </button>
-          <a
-            href="/"
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-          >
+          <a href="/" className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-accent">
             Go home
           </a>
         </div>
@@ -77,20 +75,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "SignForge — Enterprise Electronic Signature Platform" },
+      { name: "description", content: "SignForge is a premium e-signature platform for teams: sign PDFs and documents, manage templates, certificates, audit trails, and analytics with enterprise-grade security." },
+      { name: "author", content: "SignForge" },
+      { property: "og:title", content: "SignForge — Enterprise Electronic Signature Platform" },
+      { property: "og:description", content: "Sign, send, and manage documents with AI assistance and enterprise-grade security." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
+      { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
   }),
@@ -104,6 +98,7 @@ function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <HeadContent />
       </head>
       <body>
@@ -116,11 +111,23 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const router = useRouter();
+
+  useEffect(() => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+      router.invalidate();
+      if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
+    });
+    return () => sub.subscription.unsubscribe();
+  }, [router, queryClient]);
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <ThemeProvider>
+        <Outlet />
+        <Toaster position="top-right" richColors />
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
