@@ -14,16 +14,316 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      audit_logs: {
+        Row: {
+          action: string
+          category: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          metadata: Json
+          target: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          category?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json
+          target?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          category?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json
+          target?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      certificates: {
+        Row: {
+          created_at: string
+          fingerprint: string
+          id: string
+          issuer: string
+          name: string
+          owner_id: string
+          status: string
+          valid_from: string
+          valid_until: string
+        }
+        Insert: {
+          created_at?: string
+          fingerprint: string
+          id?: string
+          issuer?: string
+          name: string
+          owner_id: string
+          status?: string
+          valid_from?: string
+          valid_until?: string
+        }
+        Update: {
+          created_at?: string
+          fingerprint?: string
+          id?: string
+          issuer?: string
+          name?: string
+          owner_id?: string
+          status?: string
+          valid_from?: string
+          valid_until?: string
+        }
+        Relationships: []
+      }
+      documents: {
+        Row: {
+          created_at: string
+          file_path: string | null
+          file_type: string
+          id: string
+          owner_id: string
+          page_count: number
+          recipients: Json
+          size_bytes: number
+          status: Database["public"]["Enums"]["doc_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          file_path?: string | null
+          file_type?: string
+          id?: string
+          owner_id: string
+          page_count?: number
+          recipients?: Json
+          size_bytes?: number
+          status?: Database["public"]["Enums"]["doc_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          file_path?: string | null
+          file_type?: string
+          id?: string
+          owner_id?: string
+          page_count?: number
+          recipients?: Json
+          size_bytes?: number
+          status?: Database["public"]["Enums"]["doc_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          company: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          job_title: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          company?: string | null
+          created_at?: string
+          display_name?: string | null
+          id: string
+          job_title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          company?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          job_title?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      signatures: {
+        Row: {
+          created_at: string
+          data_url: string | null
+          id: string
+          is_default: boolean
+          name: string
+          owner_id: string
+          type: Database["public"]["Enums"]["sig_type"]
+        }
+        Insert: {
+          created_at?: string
+          data_url?: string | null
+          id?: string
+          is_default?: boolean
+          name: string
+          owner_id: string
+          type?: Database["public"]["Enums"]["sig_type"]
+        }
+        Update: {
+          created_at?: string
+          data_url?: string | null
+          id?: string
+          is_default?: boolean
+          name?: string
+          owner_id?: string
+          type?: Database["public"]["Enums"]["sig_type"]
+        }
+        Relationships: []
+      }
+      team_members: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          member_role: string
+          status: string
+          team_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          member_role?: string
+          status?: string
+          team_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          member_role?: string
+          status?: string
+          team_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+          plan: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          owner_id: string
+          plan?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          plan?: string
+        }
+        Relationships: []
+      }
+      templates: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          fields: Json
+          id: string
+          owner_id: string
+          title: string
+          updated_at: string
+          usage_count: number
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          fields?: Json
+          id?: string
+          owner_id: string
+          title: string
+          updated_at?: string
+          usage_count?: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          fields?: Json
+          id?: string
+          owner_id?: string
+          title?: string
+          updated_at?: string
+          usage_count?: number
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "manager" | "member"
+      doc_status:
+        | "draft"
+        | "pending"
+        | "signed"
+        | "completed"
+        | "declined"
+        | "expired"
+      sig_type: "drawn" | "typed" | "uploaded" | "ai"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +450,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "manager", "member"],
+      doc_status: [
+        "draft",
+        "pending",
+        "signed",
+        "completed",
+        "declined",
+        "expired",
+      ],
+      sig_type: ["drawn", "typed", "uploaded", "ai"],
+    },
   },
 } as const
