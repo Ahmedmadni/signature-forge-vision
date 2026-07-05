@@ -11,12 +11,12 @@ export const Route = createFileRoute("/")({
 });
 
 const features = [
-  { icon: PenTool, title: "Four ways to sign", desc: "Draw, type with signature fonts, upload an image, or generate one with AI." },
-  { icon: ScanLine, title: "AI field detection", desc: "OCR reads your document and auto-places signature, date, and text fields." },
-  { icon: Layers, title: "Pro PDF editor", desc: "Zoom to 800%, snap-to-grid, rotate, merge, split, and reorder pages." },
-  { icon: ShieldCheck, title: "Enterprise security", desc: "AES-256 encryption, digital certificates, timestamps, and full audit trails." },
-  { icon: Fingerprint, title: "Hash verification", desc: "Every document is fingerprinted and tamper-evident from send to signed." },
-  { icon: FileCheck2, title: "Smart placement", desc: "Sign single, selected, all, odd, even pages or custom ranges instantly." },
+  { icon: PenTool, title: "أربع طرق للتوقيع", desc: "ارسم، أو اكتب بخطوط التوقيع، أو ارفع صورة، أو ولّد توقيعًا بالذكاء الاصطناعي." },
+  { icon: ScanLine, title: "كشف الحقول بالذكاء الاصطناعي", desc: "يقرأ التعرّف الضوئي مستندك ويضع حقول التوقيع والتاريخ والنص تلقائيًا." },
+  { icon: Layers, title: "محرر PDF احترافي", desc: "تكبير حتى 800%، محاذاة للشبكة، تدوير، دمج، تقسيم، وإعادة ترتيب الصفحات." },
+  { icon: ShieldCheck, title: "أمان المؤسسات", desc: "تشفير AES-256، شهادات رقمية، أختام زمنية، وسجلات تدقيق كاملة." },
+  { icon: Fingerprint, title: "التحقق بالبصمة", desc: "لكل مستند بصمة تكشف أي تلاعب من الإرسال حتى التوقيع." },
+  { icon: FileCheck2, title: "توزيع ذكي", desc: "وقّع صفحة واحدة أو محدّدة أو الكل أو الفردية أو الزوجية أو نطاقات مخصّصة فورًا." },
 ];
 
 function Landing() {
@@ -27,12 +27,12 @@ function Landing() {
           <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-brand shadow-glow">
             <Sparkles className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="font-display text-lg font-semibold">SignForge</span>
+          <span className="font-display text-lg font-semibold">ساين فورج</span>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" asChild><Link to="/auth">Sign in</Link></Button>
+          <Button variant="ghost" asChild><Link to="/auth">تسجيل الدخول</Link></Button>
           <Button asChild className="bg-gradient-brand text-primary-foreground shadow-glow">
-            <Link to="/auth">Get started</Link>
+            <Link to="/auth">ابدأ الآن</Link>
           </Button>
         </div>
       </header>
@@ -45,20 +45,19 @@ function Landing() {
           className="relative mx-auto max-w-3xl"
         >
           <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-border glass px-4 py-1.5 text-xs font-medium">
-            <Lock className="h-3.5 w-3.5 text-accent" /> AES-256 · Digital certificates · Audit trail
+            <Lock className="h-3.5 w-3.5 text-accent" /> تشفير AES-256 · شهادات رقمية · سجل تدقيق
           </div>
           <h1 className="font-display text-4xl font-semibold leading-tight tracking-tight md:text-6xl">
-            The enterprise way to <span className="text-gradient">sign anything</span>
+            الطريقة المؤسسية <span className="text-gradient">لتوقيع أي شيء</span>
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-base text-muted-foreground md:text-lg">
-            Upload, prepare, and sign PDFs and documents with AI assistance, a professional editor,
-            and security your legal team will love.
+            ارفع وجهّز ووقّع ملفات PDF والمستندات بمساعدة الذكاء الاصطناعي ومحرّر احترافي وأمان سيحبّه فريقك القانوني.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Button size="lg" asChild className="bg-gradient-brand text-primary-foreground shadow-glow">
-              <Link to="/auth">Open the dashboard <ArrowRight className="h-4 w-4" /></Link>
+              <Link to="/auth">افتح لوحة التحكم <ArrowRight className="h-4 w-4" /></Link>
             </Button>
-            <Button size="lg" variant="outline" asChild><Link to="/auth">Book a demo</Link></Button>
+            <Button size="lg" variant="outline" asChild><Link to="/auth">احجز عرضًا توضيحيًا</Link></Button>
           </div>
         </motion.div>
       </section>
@@ -83,7 +82,7 @@ function Landing() {
       </section>
 
       <footer className="border-t border-border px-5 py-8 text-center text-sm text-muted-foreground">
-        © {new Date().getFullYear()} SignForge. Enterprise electronic signatures.
+        © {new Date().getFullYear()} ساين فورج. التوقيع الإلكتروني للمؤسسات.
       </footer>
     </div>
   );
