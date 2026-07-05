@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { templates } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/_authenticated/templates")({
-  head: () => ({ meta: [{ title: "Templates — SignForge" }] }),
+  head: () => ({ meta: [{ title: "القوالب — ساين فورج" }] }),
   component: Templates,
 });
 
@@ -14,9 +14,9 @@ function Templates() {
   return (
     <>
       <PageHeader
-        title="Templates"
-        subtitle="Reusable, pre-configured documents to send in one click."
-        actions={<Button className="bg-gradient-brand text-primary-foreground shadow-glow"><Plus className="h-4 w-4" /> New template</Button>}
+        title="القوالب"
+        subtitle="مستندات جاهزة قابلة لإعادة الاستخدام للإرسال بنقرة واحدة."
+        actions={<Button className="bg-gradient-brand text-primary-foreground shadow-glow"><Plus className="h-4 w-4" /> قالب جديد</Button>}
       />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {templates.map((t, i) => (
@@ -35,10 +35,10 @@ function Templates() {
             <h3 className="relative mt-4 font-display text-lg font-semibold">{t.title}</h3>
             <span className="relative mt-1 inline-block rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">{t.category}</span>
             <div className="relative mt-4 flex items-center justify-between text-xs text-muted-foreground">
-              <span>{t.fields} fields · {t.uses} uses</span>
+              <span>{t.fields} حقل · {t.uses} استخدام</span>
               <span>{t.updated}</span>
             </div>
-            <Button variant="outline" size="sm" className="relative mt-4 w-full"><Copy className="h-4 w-4" /> Use template</Button>
+            <Button variant="outline" size="sm" className="relative mt-4 w-full"><Copy className="h-4 w-4" /> استخدام القالب</Button>
           </motion.div>
         ))}
       </div>

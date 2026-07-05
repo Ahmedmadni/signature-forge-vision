@@ -13,7 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/settings")({
-  head: () => ({ meta: [{ title: "Settings — SignForge" }] }),
+  head: () => ({ meta: [{ title: "الإعدادات — ساين فورج" }] }),
   component: Settings,
 });
 
@@ -48,32 +48,32 @@ function Settings() {
   const save = async () => {
     if (!user) return;
     const { error } = await supabase.from("profiles").update({ display_name: name, company }).eq("id", user.id);
-    if (error) toast.error(error.message); else toast.success("Profile updated");
+    if (error) toast.error(error.message); else toast.success("تم تحديث الملف الشخصي");
   };
 
   return (
     <>
-      <PageHeader title="Settings" subtitle="Manage your profile, appearance, and security preferences." />
+      <PageHeader title="الإعدادات" subtitle="أدر ملفك الشخصي والمظهر وتفضيلات الأمان." />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Section icon={User} title="Profile" desc="Your personal details">
+        <Section icon={User} title="الملف الشخصي" desc="بياناتك الشخصية">
           <div className="space-y-4">
-            <div className="space-y-1.5"><Label>Full name</Label><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Alex Rivera" /></div>
-            <div className="space-y-1.5"><Label>Email</Label><Input value={user?.email ?? ""} disabled /></div>
-            <div className="space-y-1.5"><Label>Company</Label><Input value={company} onChange={(e) => setCompany(e.target.value)} placeholder="Acme Inc." /></div>
-            <Button onClick={save} className="bg-gradient-brand text-primary-foreground shadow-glow"><Save className="h-4 w-4" /> Save changes</Button>
+            <div className="space-y-1.5"><Label>الاسم الكامل</Label><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="أليكس ريفيرا" /></div>
+            <div className="space-y-1.5"><Label>البريد الإلكتروني</Label><Input value={user?.email ?? ""} disabled /></div>
+            <div className="space-y-1.5"><Label>الشركة</Label><Input value={company} onChange={(e) => setCompany(e.target.value)} placeholder="شركة أكمي" /></div>
+            <Button onClick={save} className="bg-gradient-brand text-primary-foreground shadow-glow"><Save className="h-4 w-4" /> حفظ التغييرات</Button>
           </div>
         </Section>
 
-        <Section icon={Palette} title="Appearance" desc="Customize the interface">
+        <Section icon={Palette} title="المظهر" desc="خصّص الواجهة">
           <div className="flex items-center justify-between rounded-xl border border-border p-4">
-            <div><p className="text-sm font-medium">Dark mode</p><p className="text-xs text-muted-foreground">Toggle light and dark themes</p></div>
+            <div><p className="text-sm font-medium">الوضع الداكن</p><p className="text-xs text-muted-foreground">التبديل بين السمة الفاتحة والداكنة</p></div>
             <Switch checked={theme === "dark"} onCheckedChange={(v) => setTheme(v ? "dark" : "light")} />
           </div>
         </Section>
 
-        <Section icon={ShieldCheck} title="Security" desc="Protect your account">
+        <Section icon={ShieldCheck} title="الأمان" desc="احمِ حسابك">
           <div className="space-y-3">
-            {["Two-factor authentication", "Require signer verification", "Session timeout after inactivity"].map((s) => (
+            {["المصادقة الثنائية", "طلب التحقق من الموقّع", "انتهاء الجلسة بعد الخمول"].map((s) => (
               <div key={s} className="flex items-center justify-between rounded-xl border border-border p-4">
                 <p className="text-sm font-medium">{s}</p><Switch defaultChecked />
               </div>
@@ -81,9 +81,9 @@ function Settings() {
           </div>
         </Section>
 
-        <Section icon={Bell} title="Notifications" desc="How you get updates">
+        <Section icon={Bell} title="الإشعارات" desc="كيف تصلك التحديثات">
           <div className="space-y-3">
-            {["Email on document signed", "Reminders for pending signatures", "Weekly analytics digest"].map((s, i) => (
+            {["بريد عند توقيع مستند", "تذكيرات للتوقيعات المعلّقة", "ملخّص تحليلات أسبوعي"].map((s, i) => (
               <div key={s} className="flex items-center justify-between rounded-xl border border-border p-4">
                 <p className="text-sm font-medium">{s}</p><Switch defaultChecked={i !== 2} />
               </div>

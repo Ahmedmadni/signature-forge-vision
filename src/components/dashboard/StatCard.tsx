@@ -31,7 +31,7 @@ export function StatCard({
             {trend === "up" ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}
             {delta}
           </span>
-          <span className="text-muted-foreground">vs last week</span>
+          <span className="text-muted-foreground">مقارنة بالأسبوع الماضي</span>
         </div>
       )}
     </motion.div>

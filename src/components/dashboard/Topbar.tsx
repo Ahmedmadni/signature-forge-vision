@@ -26,7 +26,7 @@ export function Topbar() {
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    toast.success("Signed out");
+    toast.success("تم تسجيل الخروج");
     navigate({ to: "/auth" });
   };
 
@@ -44,18 +44,18 @@ export function Topbar() {
       </Sheet>
 
       <div className="relative hidden max-w-md flex-1 md:block">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input placeholder="Search documents, people, templates…" className="pl-9 bg-muted/50 border-transparent" />
+        <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input placeholder="ابحث في المستندات والأشخاص والقوالب…" className="pr-9 bg-muted/50 border-transparent" />
       </div>
 
       <div className="ml-auto flex items-center gap-1.5">
         <Button className="hidden bg-gradient-brand text-primary-foreground shadow-glow sm:inline-flex" size="sm">
-          <Plus className="h-4 w-4" /> New
+          <Plus className="h-4 w-4" /> جديد
         </Button>
-        <Button variant="ghost" size="icon" onClick={toggle} aria-label="Toggle theme">
+        <Button variant="ghost" size="icon" onClick={toggle} aria-label="تبديل السمة">
           {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
         </Button>
-        <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
+        <Button variant="ghost" size="icon" className="relative" aria-label="الإشعارات">
           <Bell className="h-5 w-5" />
           <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-accent" />
         </Button>
@@ -72,9 +72,9 @@ export function Topbar() {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel className="truncate">{email}</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate({ to: "/settings" })}>Settings</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate({ to: "/settings" })}>الإعدادات</DropdownMenuItem>
             <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive">
-              <LogOut className="h-4 w-4" /> Sign out
+              <LogOut className="h-4 w-4" /> تسجيل الخروج
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

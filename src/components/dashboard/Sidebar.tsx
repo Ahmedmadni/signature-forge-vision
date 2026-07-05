@@ -7,20 +7,20 @@ import {
 import { cn } from "@/lib/utils";
 
 const nav = [
-  { section: "Workspace", items: [
-    { to: "/dashboard", label: "Overview", icon: LayoutDashboard },
-    { to: "/documents", label: "Documents", icon: FileText },
-    { to: "/templates", label: "Templates", icon: LayoutTemplate },
-    { to: "/signatures", label: "Signatures", icon: PenTool },
+  { section: "مساحة العمل", items: [
+    { to: "/dashboard", label: "نظرة عامة", icon: LayoutDashboard },
+    { to: "/documents", label: "المستندات", icon: FileText },
+    { to: "/templates", label: "القوالب", icon: LayoutTemplate },
+    { to: "/signatures", label: "التوقيعات", icon: PenTool },
   ]},
-  { section: "Organization", items: [
-    { to: "/teams", label: "Teams", icon: Users },
-    { to: "/certificates", label: "Certificates", icon: ShieldCheck },
-    { to: "/audit", label: "Audit Logs", icon: ScrollText },
-    { to: "/analytics", label: "Analytics", icon: BarChart3 },
+  { section: "المؤسسة", items: [
+    { to: "/teams", label: "الفرق", icon: Users },
+    { to: "/certificates", label: "الشهادات", icon: ShieldCheck },
+    { to: "/audit", label: "سجلات التدقيق", icon: ScrollText },
+    { to: "/analytics", label: "التحليلات", icon: BarChart3 },
   ]},
-  { section: "Account", items: [
-    { to: "/settings", label: "Settings", icon: Settings },
+  { section: "الحساب", items: [
+    { to: "/settings", label: "الإعدادات", icon: Settings },
   ]},
 ];
 
@@ -28,14 +28,14 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   return (
-    <aside className="flex h-full w-[260px] flex-col bg-sidebar border-r border-sidebar-border">
+    <aside className="flex h-full w-[260px] flex-col bg-sidebar border-s border-sidebar-border">
       <Link to="/dashboard" onClick={onNavigate} className="flex items-center gap-2.5 px-6 py-5">
         <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-brand shadow-glow">
           <Sparkles className="h-5 w-5 text-primary-foreground" />
         </div>
         <div className="leading-tight">
-          <div className="font-display text-lg font-semibold tracking-tight">SignForge</div>
-          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Enterprise eSign</div>
+          <div className="font-display text-lg font-semibold tracking-tight">ساين فورج</div>
+          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">التوقيع الإلكتروني للمؤسسات</div>
         </div>
       </Link>
 
@@ -79,9 +79,9 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
       <div className="m-3 rounded-2xl border border-sidebar-border bg-gradient-glow p-4">
         <div className="flex items-center gap-2 text-sm font-semibold">
-          <Sparkles className="h-4 w-4 text-accent" /> AI Assist
+          <Sparkles className="h-4 w-4 text-accent" /> مساعد الذكاء الاصطناعي
         </div>
-        <p className="mt-1 text-xs text-muted-foreground">Auto-detect fields & suggest signature placement.</p>
+        <p className="mt-1 text-xs text-muted-foreground">اكتشاف الحقول تلقائيًا واقتراح مواضع التوقيع.</p>
       </div>
     </aside>
   );

@@ -10,34 +10,34 @@ import { cn } from "@/lib/utils";
 import { team } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/_authenticated/teams")({
-  head: () => ({ meta: [{ title: "Teams — SignForge" }] }),
+  head: () => ({ meta: [{ title: "الفرق — ساين فورج" }] }),
   component: Teams,
 });
 
 const roleClass: Record<string, string> = {
-  Admin: "bg-primary/15 text-primary",
-  Manager: "bg-accent/15 text-accent",
-  Member: "bg-muted text-muted-foreground",
+  "مدير": "bg-primary/15 text-primary",
+  "مشرف": "bg-accent/15 text-accent",
+  "عضو": "bg-muted text-muted-foreground",
 };
 
 function Teams() {
   return (
     <>
       <PageHeader
-        title="Teams"
-        subtitle="Manage members, roles, and access across your organization."
-        actions={<Button className="bg-gradient-brand text-primary-foreground shadow-glow"><UserPlus className="h-4 w-4" /> Invite member</Button>}
+        title="الفرق"
+        subtitle="أدر الأعضاء والأدوار والصلاحيات في مؤسستك."
+        actions={<Button className="bg-gradient-brand text-primary-foreground shadow-glow"><UserPlus className="h-4 w-4" /> دعوة عضو</Button>}
       />
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard label="Members" value="18" icon={Users} index={0} />
-        <StatCard label="Admins" value="3" icon={ShieldCheck} index={1} />
-        <StatCard label="Pending invites" value="2" icon={Clock} index={2} />
+        <StatCard label="الأعضاء" value="18" icon={Users} index={0} />
+        <StatCard label="المدراء" value="3" icon={ShieldCheck} index={1} />
+        <StatCard label="دعوات معلّقة" value="2" icon={Clock} index={2} />
       </div>
 
       <div className="rounded-2xl border border-border bg-card shadow-elegant">
         <div className="border-b border-border px-5 py-4">
-          <h3 className="font-display text-lg font-semibold">Members</h3>
+          <h3 className="font-display text-lg font-semibold">الأعضاء</h3>
         </div>
         <div className="divide-y divide-border">
           {team.map((m, i) => (
@@ -55,9 +55,9 @@ function Teams() {
               </div>
               <span className={cn("rounded-full px-2.5 py-1 text-xs font-medium", roleClass[m.role])}>{m.role}</span>
               {m.status === "invited" ? (
-                <span className="flex items-center gap-1 text-xs text-warning"><Mail className="h-3.5 w-3.5" /> Invited</span>
+                <span className="flex items-center gap-1 text-xs text-warning"><Mail className="h-3.5 w-3.5" /> مدعو</span>
               ) : (
-                <span className="flex items-center gap-1 text-xs text-success"><span className="h-1.5 w-1.5 rounded-full bg-success" /> Active</span>
+                <span className="flex items-center gap-1 text-xs text-success"><span className="h-1.5 w-1.5 rounded-full bg-success" /> نشط</span>
               )}
               <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
             </motion.div>

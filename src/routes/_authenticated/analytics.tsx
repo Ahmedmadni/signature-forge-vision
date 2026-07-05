@@ -10,7 +10,7 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { activityData, statusBreakdown, turnaroundData } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/_authenticated/analytics")({
-  head: () => ({ meta: [{ title: "Analytics — SignForge" }] }),
+  head: () => ({ meta: [{ title: "التحليلات — ساين فورج" }] }),
   component: Analytics,
 });
 
@@ -19,18 +19,18 @@ const tooltip = { background: "var(--color-popover)", border: "1px solid var(--c
 function Analytics() {
   return (
     <>
-      <PageHeader title="Analytics" subtitle="Insights into signing performance and completion rates." />
+      <PageHeader title="التحليلات" subtitle="رؤى حول أداء التوقيع ومعدلات الإنجاز." />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Completion rate" value="94.2%" delta="3.1%" icon={CheckCircle2} index={0} />
-        <StatCard label="Avg. turnaround" value="11h" delta="18%" icon={Clock} index={1} />
-        <StatCard label="Sent this month" value="1,842" delta="9.4%" icon={FileText} index={2} />
-        <StatCard label="Decline rate" value="2.8%" delta="0.6%" trend="down" icon={TrendingDown} index={3} />
+        <StatCard label="معدل الإنجاز" value="94.2%" delta="3.1%" icon={CheckCircle2} index={0} />
+        <StatCard label="متوسط زمن الإنجاز" value="11س" delta="18%" icon={Clock} index={1} />
+        <StatCard label="مُرسلة هذا الشهر" value="1,842" delta="9.4%" icon={FileText} index={2} />
+        <StatCard label="معدل الرفض" value="2.8%" delta="0.6%" trend="down" icon={TrendingDown} index={3} />
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
         <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-border bg-card p-5 shadow-elegant lg:col-span-2">
-          <h3 className="mb-4 font-display text-lg font-semibold">Weekly throughput</h3>
+          <h3 className="mb-4 font-display text-lg font-semibold">الإنتاجية الأسبوعية</h3>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={activityData}>
@@ -48,7 +48,7 @@ function Analytics() {
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }} className="rounded-2xl border border-border bg-card p-5 shadow-elegant">
-          <h3 className="mb-4 font-display text-lg font-semibold">Status breakdown</h3>
+          <h3 className="mb-4 font-display text-lg font-semibold">توزيع الحالات</h3>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -64,7 +64,7 @@ function Analytics() {
       </div>
 
       <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }} className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-elegant">
-        <h3 className="mb-4 font-display text-lg font-semibold">Avg. turnaround time (hours)</h3>
+        <h3 className="mb-4 font-display text-lg font-semibold">متوسط زمن الإنجاز (ساعات)</h3>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={turnaroundData}>

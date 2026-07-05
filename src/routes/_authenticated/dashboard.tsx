@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { documents, activityData, auditLogs } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
-  head: () => ({ meta: [{ title: "Overview — SignForge" }] }),
+  head: () => ({ meta: [{ title: "نظرة عامة — ساين فورج" }] }),
   component: Overview,
 });
 
@@ -19,21 +19,21 @@ function Overview() {
   return (
     <>
       <PageHeader
-        title="Welcome back"
-        subtitle="Here's what's happening across your signing workspace."
+        title="مرحبًا بعودتك"
+        subtitle="إليك ما يجري في مساحة التوقيع الخاصة بك."
         actions={
           <>
-            <Button variant="outline"><Upload className="h-4 w-4" /> Upload</Button>
-            <Button className="bg-gradient-brand text-primary-foreground shadow-glow"><PenTool className="h-4 w-4" /> New signature request</Button>
+            <Button variant="outline"><Upload className="h-4 w-4" /> رفع</Button>
+            <Button className="bg-gradient-brand text-primary-foreground shadow-glow"><PenTool className="h-4 w-4" /> طلب توقيع جديد</Button>
           </>
         }
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total Documents" value="1,284" delta="12.4%" icon={FileText} index={0} />
-        <StatCard label="Awaiting Signature" value="47" delta="8.1%" trend="down" icon={Clock} index={1} />
-        <StatCard label="Completed" value="932" delta="5.2%" icon={CheckCircle2} index={2} />
-        <StatCard label="Team Members" value="18" delta="2" icon={Users} index={3} />
+        <StatCard label="إجمالي المستندات" value="1,284" delta="12.4%" icon={FileText} index={0} />
+        <StatCard label="بانتظار التوقيع" value="47" delta="8.1%" trend="down" icon={Clock} index={1} />
+        <StatCard label="مكتملة" value="932" delta="5.2%" icon={CheckCircle2} index={2} />
+        <StatCard label="أعضاء الفريق" value="18" delta="2" icon={Users} index={3} />
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -42,8 +42,8 @@ function Overview() {
           className="rounded-2xl border border-border bg-card p-5 shadow-elegant lg:col-span-2"
         >
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-display text-lg font-semibold">Signing activity</h3>
-            <span className="text-xs text-muted-foreground">Last 7 days</span>
+            <h3 className="font-display text-lg font-semibold">نشاط التوقيع</h3>
+            <span className="text-xs text-muted-foreground">آخر 7 أيام</span>
           </div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -76,15 +76,15 @@ function Overview() {
           className="rounded-2xl border border-border bg-card p-5 shadow-elegant"
         >
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-display text-lg font-semibold">Recent activity</h3>
-            <Link to="/audit" className="text-xs text-primary hover:underline">View all</Link>
+            <h3 className="font-display text-lg font-semibold">النشاط الأخير</h3>
+            <Link to="/audit" className="text-xs text-primary hover:underline">عرض الكل</Link>
           </div>
           <div className="space-y-4">
             {auditLogs.slice(0, 5).map((log) => (
               <div key={log.id} className="flex gap-3">
                 <div className="mt-1 h-2 w-2 shrink-0 rounded-full bg-gradient-brand" />
                 <div className="min-w-0">
-                  <p className="truncate text-sm"><span className="font-medium">{log.actor}</span> {log.action.toLowerCase()}</p>
+                  <p className="truncate text-sm"><span className="font-medium">{log.actor}</span> {log.action}</p>
                   <p className="truncate text-xs text-muted-foreground">{log.target} · {log.time}</p>
                 </div>
               </div>
@@ -98,8 +98,8 @@ function Overview() {
         className="mt-6 rounded-2xl border border-border bg-card shadow-elegant"
       >
         <div className="flex items-center justify-between px-5 py-4">
-          <h3 className="font-display text-lg font-semibold">Recent documents</h3>
-          <Button variant="ghost" size="sm" asChild><Link to="/documents">All documents <ArrowRight className="h-4 w-4" /></Link></Button>
+          <h3 className="font-display text-lg font-semibold">أحدث المستندات</h3>
+          <Button variant="ghost" size="sm" asChild><Link to="/documents">جميع المستندات <ArrowRight className="h-4 w-4" /></Link></Button>
         </div>
         <div className="divide-y divide-border border-t border-border">
           {documents.slice(0, 5).map((doc) => (
@@ -109,7 +109,7 @@ function Overview() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{doc.title}</p>
-                <p className="text-xs text-muted-foreground">{doc.type} · {doc.pages} pages · {doc.updated}</p>
+                <p className="text-xs text-muted-foreground">{doc.type} · {doc.pages} صفحة · {doc.updated}</p>
               </div>
               <StatusBadge status={doc.status} />
             </div>
