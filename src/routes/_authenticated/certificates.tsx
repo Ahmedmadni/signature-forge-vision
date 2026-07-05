@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { certificates } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/_authenticated/certificates")({
-  head: () => ({ meta: [{ title: "Certificates — SignForge" }] }),
+  head: () => ({ meta: [{ title: "الشهادات — ساين فورج" }] }),
   component: Certificates,
 });
 
@@ -15,9 +15,9 @@ function Certificates() {
   return (
     <>
       <PageHeader
-        title="Certificates"
-        subtitle="Digital certificates and trusted timestamps for legally-binding signatures."
-        actions={<Button className="bg-gradient-brand text-primary-foreground shadow-glow"><Plus className="h-4 w-4" /> Issue certificate</Button>}
+        title="الشهادات"
+        subtitle="شهادات رقمية وأختام زمنية موثوقة لتوقيعات ملزمة قانونيًا."
+        actions={<Button className="bg-gradient-brand text-primary-foreground shadow-glow"><Plus className="h-4 w-4" /> إصدار شهادة</Button>}
       />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -36,20 +36,20 @@ function Certificates() {
                   </div>
                   <div>
                     <h3 className="font-display font-semibold">{c.name}</h3>
-                    <p className="text-xs text-muted-foreground">Issued by {c.issuer}</p>
+                    <p className="text-xs text-muted-foreground">صادرة عن {c.issuer}</p>
                   </div>
                 </div>
                 <span className={cn("flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium", expiring ? "bg-warning/15 text-warning" : "bg-success/15 text-success")}>
                   {expiring && <AlertTriangle className="h-3 w-3" />}
-                  {expiring ? "Expiring soon" : "Valid"}
+                  {expiring ? "قرب الانتهاء" : "سارية"}
                 </span>
               </div>
               <div className="mt-4 flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2 font-mono text-xs text-muted-foreground">
                 <Fingerprint className="h-4 w-4 shrink-0" /> {c.fingerprint}
               </div>
               <div className="mt-4 flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Valid until {c.validUntil}</span>
-                <Button variant="outline" size="sm"><Download className="h-4 w-4" /> Export</Button>
+                <span className="text-xs text-muted-foreground">سارية حتى {c.validUntil}</span>
+                <Button variant="outline" size="sm"><Download className="h-4 w-4" /> تصدير</Button>
               </div>
             </motion.div>
           );

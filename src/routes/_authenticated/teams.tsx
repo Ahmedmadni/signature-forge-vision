@@ -15,9 +15,9 @@ export const Route = createFileRoute("/_authenticated/teams")({
 });
 
 const roleClass: Record<string, string> = {
-  Admin: "bg-primary/15 text-primary",
-  Manager: "bg-accent/15 text-accent",
-  Member: "bg-muted text-muted-foreground",
+  "مدير": "bg-primary/15 text-primary",
+  "مشرف": "bg-accent/15 text-accent",
+  "عضو": "bg-muted text-muted-foreground",
 };
 
 function Teams() {

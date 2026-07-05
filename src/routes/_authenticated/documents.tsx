@@ -16,6 +16,10 @@ export const Route = createFileRoute("/_authenticated/documents")({
 
 const filters: (DocStatus | "all")[] = ["all", "draft", "pending", "signed", "completed", "declined"];
 
+const filterLabels: Record<string, string> = {
+  all: "الكل", draft: "مسودة", pending: "قيد الانتظار", signed: "موقّع", completed: "مكتمل", declined: "مرفوض",
+};
+
 function Documents() {
   const [filter, setFilter] = useState<DocStatus | "all">("all");
   const [q, setQ] = useState("");
