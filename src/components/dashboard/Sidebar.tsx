@@ -7,20 +7,20 @@ import {
 import { cn } from "@/lib/utils";
 
 const nav = [
-  { section: "Workspace", items: [
-    { to: "/dashboard", label: "Overview", icon: LayoutDashboard },
-    { to: "/documents", label: "Documents", icon: FileText },
-    { to: "/templates", label: "Templates", icon: LayoutTemplate },
-    { to: "/signatures", label: "Signatures", icon: PenTool },
+  { section: "مساحة العمل", items: [
+    { to: "/dashboard", label: "نظرة عامة", icon: LayoutDashboard },
+    { to: "/documents", label: "المستندات", icon: FileText },
+    { to: "/templates", label: "القوالب", icon: LayoutTemplate },
+    { to: "/signatures", label: "التوقيعات", icon: PenTool },
   ]},
-  { section: "Organization", items: [
-    { to: "/teams", label: "Teams", icon: Users },
-    { to: "/certificates", label: "Certificates", icon: ShieldCheck },
-    { to: "/audit", label: "Audit Logs", icon: ScrollText },
-    { to: "/analytics", label: "Analytics", icon: BarChart3 },
+  { section: "المؤسسة", items: [
+    { to: "/teams", label: "الفرق", icon: Users },
+    { to: "/certificates", label: "الشهادات", icon: ShieldCheck },
+    { to: "/audit", label: "سجلات التدقيق", icon: ScrollText },
+    { to: "/analytics", label: "التحليلات", icon: BarChart3 },
   ]},
-  { section: "Account", items: [
-    { to: "/settings", label: "Settings", icon: Settings },
+  { section: "الحساب", items: [
+    { to: "/settings", label: "الإعدادات", icon: Settings },
   ]},
 ];
 
