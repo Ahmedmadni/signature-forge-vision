@@ -75,11 +75,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "SignForge — Enterprise Electronic Signature Platform" },
-      { name: "description", content: "SignForge is a premium e-signature platform for teams: sign PDFs and documents, manage templates, certificates, audit trails, and analytics with enterprise-grade security." },
+      { title: "ساين فورج — منصة التوقيع الإلكتروني للمؤسسات" },
+      { name: "description", content: "ساين فورج منصة توقيع إلكتروني متميزة للفرق: وقّع ملفات PDF والمستندات، وأدر القوالب والشهادات وسجلات التدقيق والتحليلات بأمان على مستوى المؤسسات." },
       { name: "author", content: "SignForge" },
-      { property: "og:title", content: "SignForge — Enterprise Electronic Signature Platform" },
-      { property: "og:description", content: "Sign, send, and manage documents with AI assistance and enterprise-grade security." },
+      { property: "og:title", content: "ساين فورج — منصة التوقيع الإلكتروني للمؤسسات" },
+      { property: "og:description", content: "وقّع وأرسل وأدر المستندات بمساعدة الذكاء الاصطناعي وأمان على مستوى المؤسسات." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -96,7 +96,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="ar" dir="rtl">
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <HeadContent />
