@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-// @ts-expect-error - أنواع pdfjs تُحمّل ديناميكيًا
 import * as pdfjsLib from "pdfjs-dist";
 import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 
