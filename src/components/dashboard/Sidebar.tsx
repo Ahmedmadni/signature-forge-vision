@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import {
   LayoutDashboard, FileText, LayoutTemplate, PenTool, Users,
-  ShieldCheck, ScrollText, BarChart3, Settings, Sparkles,
+  ShieldCheck, ScrollText, BarChart3, Settings, Sparkles, PencilRuler,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -10,6 +10,7 @@ const nav = [
   { section: "مساحة العمل", items: [
     { to: "/dashboard", label: "نظرة عامة", icon: LayoutDashboard },
     { to: "/documents", label: "المستندات", icon: FileText },
+    { to: "/editor", label: "محرّر المستندات", icon: PencilRuler },
     { to: "/templates", label: "القوالب", icon: LayoutTemplate },
     { to: "/signatures", label: "التوقيعات", icon: PenTool },
   ]},
