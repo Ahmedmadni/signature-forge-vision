@@ -101,7 +101,7 @@ export function useEditorStore(docId: string) {
   }, [storageKey]);
 
   // حفظ تلقائي مع تأخير بسيط
-  const timer = useRef<ReturnType<typeof setTimeout>>();
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => {
     if (typeof window === "undefined") return;
     setSaveStatus("saving");
