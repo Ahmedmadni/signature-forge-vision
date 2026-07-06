@@ -190,7 +190,7 @@ export function DocumentEditor({ docId, title, src }: Props) {
                 <div
                   key={n}
                   data-page={n}
-                  ref={(el) => (pageRefs.current[n] = el)}
+                  ref={(el) => { pageRefs.current[n] = el; }}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={(e) => {
                     e.preventDefault();
