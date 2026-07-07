@@ -9,6 +9,7 @@ import { FieldPalette } from "./FieldPalette";
 import { PropertiesPanel } from "./PropertiesPanel";
 import { ThumbnailSidebar } from "./ThumbnailSidebar";
 import { EditorToolbar } from "./EditorToolbar";
+import { VersionHistoryPanel } from "./VersionHistoryPanel";
 
 interface Props {
   docId: string;
@@ -30,6 +31,7 @@ export function DocumentEditor({ docId, title, src }: Props) {
   const [armed, setArmed] = useState<FieldType | null>(null);
   const [showThumbs, setShowThumbs] = useState(true);
   const [showProps, setShowProps] = useState(true);
+  const [showHistory, setShowHistory] = useState(false);
 
   // قياس منطقة العرض
   useLayoutEffect(() => {
@@ -150,6 +152,8 @@ export function DocumentEditor({ docId, title, src }: Props) {
         onRedo={store.redo}
         onToggleThumbs={() => setShowThumbs((v) => !v)}
         onToggleProps={() => setShowProps((v) => !v)}
+        onRetry={store.retrySave}
+        onToggleHistory={() => setShowHistory((v) => !v)}
       />
 
       <div className="flex gap-3">
@@ -216,9 +220,11 @@ export function DocumentEditor({ docId, title, src }: Props) {
                         selected={f.id === selectedId}
                         onSelect={() => setSelectedId(f.id)}
                         onChange={(patch) => store.updateField(f.id, patch)}
+                        onCommit={store.commitNow}
                         onRemove={() => {
                           store.removeField(f.id);
                           setSelectedId(null);
+                          store.commitNow();
                         }}
                       />
                     ))}
@@ -238,23 +244,29 @@ export function DocumentEditor({ docId, title, src }: Props) {
               className="hidden shrink-0 overflow-hidden xl:block"
             >
               <div className="max-h-[76vh] w-[288px] space-y-5 overflow-y-auto rounded-2xl border border-border bg-card/60 p-4">
-                <div>
-                  <h3 className="mb-3 flex items-center gap-2 font-display text-sm font-semibold">
-                    <PenTool className="h-4 w-4 text-primary" /> الحقول التفاعلية
-                  </h3>
-                  <FieldPalette armed={armed} onPick={(t) => setArmed((c) => (c === t ? null : t))} />
-                </div>
-                <div className="h-px bg-border" />
-                <PropertiesPanel
-                  field={selectedField}
-                  pageCount={pdf.numPages}
-                  currentPage={currentPage}
-                  onChange={(patch) => selectedField && store.updateField(selectedField.id, patch)}
-                  onApply={(scope) =>
-                    selectedField &&
-                    store.applyToPages(selectedField, scope, selectedField.page, pdf.numPages)
-                  }
-                />
+                {showHistory ? (
+                  <VersionHistoryPanel store={store} />
+                ) : (
+                  <>
+                    <div>
+                      <h3 className="mb-3 flex items-center gap-2 font-display text-sm font-semibold">
+                        <PenTool className="h-4 w-4 text-primary" /> الحقول التفاعلية
+                      </h3>
+                      <FieldPalette armed={armed} onPick={(t) => setArmed((c) => (c === t ? null : t))} />
+                    </div>
+                    <div className="h-px bg-border" />
+                    <PropertiesPanel
+                      field={selectedField}
+                      pageCount={pdf.numPages}
+                      currentPage={currentPage}
+                      onChange={(patch) => selectedField && store.updateField(selectedField.id, patch)}
+                      onApply={(scope) =>
+                        selectedField &&
+                        store.applyToPages(selectedField, scope, selectedField.page, pdf.numPages)
+                      }
+                    />
+                  </>
+                )}
               </div>
             </motion.div>
           )}

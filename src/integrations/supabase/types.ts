@@ -83,6 +83,147 @@ export type Database = {
         }
         Relationships: []
       }
+      document_fields: {
+        Row: {
+          checked: boolean | null
+          created_at: string
+          document_id: string
+          field_type: string
+          h_pct: number
+          id: string
+          metadata: Json
+          opacity: number
+          page_number: number
+          rotation: number
+          updated_at: string
+          value: string | null
+          version: number
+          w_pct: number
+          x_pct: number
+          y_pct: number
+        }
+        Insert: {
+          checked?: boolean | null
+          created_at?: string
+          document_id: string
+          field_type: string
+          h_pct?: number
+          id?: string
+          metadata?: Json
+          opacity?: number
+          page_number: number
+          rotation?: number
+          updated_at?: string
+          value?: string | null
+          version?: number
+          w_pct?: number
+          x_pct?: number
+          y_pct?: number
+        }
+        Update: {
+          checked?: boolean | null
+          created_at?: string
+          document_id?: string
+          field_type?: string
+          h_pct?: number
+          id?: string
+          metadata?: Json
+          opacity?: number
+          page_number?: number
+          rotation?: number
+          updated_at?: string
+          value?: string | null
+          version?: number
+          w_pct?: number
+          x_pct?: number
+          y_pct?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_fields_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_pages: {
+        Row: {
+          created_at: string
+          document_id: string
+          id: string
+          page_number: number
+          updated_at: string
+          width_ratio: number
+        }
+        Insert: {
+          created_at?: string
+          document_id: string
+          id?: string
+          page_number: number
+          updated_at?: string
+          width_ratio?: number
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          id?: string
+          page_number?: number
+          updated_at?: string
+          width_ratio?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_pages_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_versions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          document_id: string
+          fields_snapshot: Json
+          id: string
+          label: string | null
+          modified_count: number
+          version_number: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          document_id: string
+          fields_snapshot?: Json
+          id?: string
+          label?: string | null
+          modified_count?: number
+          version_number: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          document_id?: string
+          fields_snapshot?: Json
+          id?: string
+          label?: string | null
+          modified_count?: number
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_versions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           created_at: string
@@ -124,6 +265,51 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      field_versions: {
+        Row: {
+          changed_by: string | null
+          created_at: string
+          document_id: string
+          field_id: string
+          id: string
+          snapshot: Json
+          version: number
+        }
+        Insert: {
+          changed_by?: string | null
+          created_at?: string
+          document_id: string
+          field_id: string
+          id?: string
+          snapshot: Json
+          version: number
+        }
+        Update: {
+          changed_by?: string | null
+          created_at?: string
+          document_id?: string
+          field_id?: string
+          id?: string
+          snapshot?: Json
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "field_versions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "field_versions_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "document_fields"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {

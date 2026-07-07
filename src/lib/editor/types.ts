@@ -25,6 +25,10 @@ export interface EditorField {
   /** القيمة النصية أو حالة الاختيار */
   value?: string;
   checked?: boolean;
+  /** بيانات وصفية إضافية */
+  metadata?: Record<string, unknown>;
+  /** رقم إصدار الحقل (من قاعدة البيانات) */
+  version?: number;
 }
 
 export const fieldMeta: Record<

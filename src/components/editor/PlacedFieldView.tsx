@@ -21,6 +21,7 @@ interface Props {
   onSelect: () => void;
   onChange: (patch: Partial<EditorField>) => void;
   onRemove: () => void;
+  onCommit?: () => void;
 }
 
 export function PlacedFieldView({
@@ -31,6 +32,7 @@ export function PlacedFieldView({
   onSelect,
   onChange,
   onRemove,
+  onCommit,
 }: Props) {
   const meta = fieldMeta[field.type];
   const Icon = icons[field.type];
@@ -61,6 +63,7 @@ export function PlacedFieldView({
     const up = () => {
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
+      onCommit?.();
     };
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
@@ -84,6 +87,7 @@ export function PlacedFieldView({
     const up = () => {
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
+      onCommit?.();
     };
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
@@ -102,6 +106,7 @@ export function PlacedFieldView({
     const up = () => {
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
+      onCommit?.();
     };
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);

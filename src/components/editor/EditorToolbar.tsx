@@ -1,6 +1,6 @@
 import {
   ZoomIn, ZoomOut, Maximize, MoveHorizontal, Undo2, Redo2,
-  Check, Loader2, PanelLeft, PanelRight,
+  Check, Loader2, PanelLeft, PanelRight, CloudOff, RotateCcw, History,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -18,6 +18,8 @@ interface Props {
   onRedo: () => void;
   onToggleThumbs: () => void;
   onToggleProps: () => void;
+  onRetry: () => void;
+  onToggleHistory: () => void;
 }
 
 function TB({ label, children, ...rest }: any & { label: string }) {
@@ -36,10 +38,12 @@ function TB({ label, children, ...rest }: any & { label: string }) {
 export function EditorToolbar({
   zoom, saveStatus, canUndo, canRedo,
   onZoom, onFitWidth, onFitPage, onUndo, onRedo, onToggleThumbs, onToggleProps,
+  onRetry, onToggleHistory,
 }: Props) {
   return (
     <div className="flex items-center gap-1 rounded-2xl border border-border bg-card/80 px-2 py-1.5 shadow-elegant backdrop-blur">
       <TB label="الصفحات" onClick={onToggleThumbs}><PanelRight className="h-4 w-4" /></TB>
+      <TB label="سجل الإصدارات" onClick={onToggleHistory}><History className="h-4 w-4" /></TB>
       <div className="mx-1 h-5 w-px bg-border" />
 
       <TB label="تراجع" onClick={onUndo} disabled={!canUndo}><Undo2 className="h-4 w-4" /></TB>
@@ -57,7 +61,17 @@ export function EditorToolbar({
       <div className="mx-1 h-5 w-px bg-border" />
       <div className="flex items-center gap-1.5 px-2 text-xs text-muted-foreground">
         {saveStatus === "saving" ? (
-          <><Loader2 className="h-3.5 w-3.5 animate-spin" /> جارٍ الحفظ</>
+          <><Loader2 className="h-3.5 w-3.5 animate-spin" /> جارٍ الحفظ…</>
+        ) : saveStatus === "loading" ? (
+          <><Loader2 className="h-3.5 w-3.5 animate-spin" /> جارٍ التحميل…</>
+        ) : saveStatus === "error" ? (
+          <button
+            onClick={onRetry}
+            className="flex items-center gap-1.5 text-destructive hover:underline"
+          >
+            <CloudOff className="h-3.5 w-3.5" /> فشلت المزامنة
+            <RotateCcw className="h-3 w-3" />
+          </button>
         ) : (
           <><Check className="h-3.5 w-3.5 text-success" /> تم الحفظ</>
         )}
