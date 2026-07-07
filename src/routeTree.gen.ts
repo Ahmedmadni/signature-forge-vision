@@ -21,6 +21,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedCertificatesRouteImport } from './routes/_authenticated/certificates'
 import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated/audit'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
+import { Route as AuthenticatedEditorIndexRouteImport } from './routes/_authenticated/editor.index'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -82,6 +83,12 @@ const AuthenticatedAnalyticsRoute = AuthenticatedAnalyticsRouteImport.update({
   path: '/analytics',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedEditorIndexRoute =
+  AuthenticatedEditorIndexRouteImport.update({
+    id: '/editor/',
+    path: '/editor/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -95,6 +102,7 @@ export interface FileRoutesByFullPath {
   '/signatures': typeof AuthenticatedSignaturesRoute
   '/teams': typeof AuthenticatedTeamsRoute
   '/templates': typeof AuthenticatedTemplatesRoute
+  '/editor/': typeof AuthenticatedEditorIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -108,6 +116,7 @@ export interface FileRoutesByTo {
   '/signatures': typeof AuthenticatedSignaturesRoute
   '/teams': typeof AuthenticatedTeamsRoute
   '/templates': typeof AuthenticatedTemplatesRoute
+  '/editor': typeof AuthenticatedEditorIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -123,6 +132,7 @@ export interface FileRoutesById {
   '/_authenticated/signatures': typeof AuthenticatedSignaturesRoute
   '/_authenticated/teams': typeof AuthenticatedTeamsRoute
   '/_authenticated/templates': typeof AuthenticatedTemplatesRoute
+  '/_authenticated/editor/': typeof AuthenticatedEditorIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -138,6 +148,7 @@ export interface FileRouteTypes {
     | '/signatures'
     | '/teams'
     | '/templates'
+    | '/editor/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -151,6 +162,7 @@ export interface FileRouteTypes {
     | '/signatures'
     | '/teams'
     | '/templates'
+    | '/editor'
   id:
     | '__root__'
     | '/'
@@ -165,6 +177,7 @@ export interface FileRouteTypes {
     | '/_authenticated/signatures'
     | '/_authenticated/teams'
     | '/_authenticated/templates'
+    | '/_authenticated/editor/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -259,6 +272,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAnalyticsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/editor/': {
+      id: '/_authenticated/editor/'
+      path: '/editor'
+      fullPath: '/editor/'
+      preLoaderRoute: typeof AuthenticatedEditorIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -272,6 +292,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSignaturesRoute: typeof AuthenticatedSignaturesRoute
   AuthenticatedTeamsRoute: typeof AuthenticatedTeamsRoute
   AuthenticatedTemplatesRoute: typeof AuthenticatedTemplatesRoute
+  AuthenticatedEditorIndexRoute: typeof AuthenticatedEditorIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -284,6 +305,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSignaturesRoute: AuthenticatedSignaturesRoute,
   AuthenticatedTeamsRoute: AuthenticatedTeamsRoute,
   AuthenticatedTemplatesRoute: AuthenticatedTemplatesRoute,
+  AuthenticatedEditorIndexRoute: AuthenticatedEditorIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
