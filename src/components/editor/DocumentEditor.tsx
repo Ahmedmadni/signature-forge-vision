@@ -9,6 +9,7 @@ import { FieldPalette } from "./FieldPalette";
 import { PropertiesPanel } from "./PropertiesPanel";
 import { ThumbnailSidebar } from "./ThumbnailSidebar";
 import { EditorToolbar } from "./EditorToolbar";
+import { VersionHistoryPanel } from "./VersionHistoryPanel";
 
 interface Props {
   docId: string;
@@ -30,6 +31,7 @@ export function DocumentEditor({ docId, title, src }: Props) {
   const [armed, setArmed] = useState<FieldType | null>(null);
   const [showThumbs, setShowThumbs] = useState(true);
   const [showProps, setShowProps] = useState(true);
+  const [showHistory, setShowHistory] = useState(false);
 
   // قياس منطقة العرض
   useLayoutEffect(() => {
@@ -150,6 +152,8 @@ export function DocumentEditor({ docId, title, src }: Props) {
         onRedo={store.redo}
         onToggleThumbs={() => setShowThumbs((v) => !v)}
         onToggleProps={() => setShowProps((v) => !v)}
+        onRetry={store.retrySave}
+        onToggleHistory={() => setShowHistory((v) => !v)}
       />
 
       <div className="flex gap-3">
@@ -216,9 +220,11 @@ export function DocumentEditor({ docId, title, src }: Props) {
                         selected={f.id === selectedId}
                         onSelect={() => setSelectedId(f.id)}
                         onChange={(patch) => store.updateField(f.id, patch)}
+                        onCommit={store.commitNow}
                         onRemove={() => {
                           store.removeField(f.id);
                           setSelectedId(null);
+                          store.commitNow();
                         }}
                       />
                     ))}
