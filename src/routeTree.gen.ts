@@ -16,7 +16,6 @@ import { Route as AuthenticatedTemplatesRouteImport } from './routes/_authentica
 import { Route as AuthenticatedTeamsRouteImport } from './routes/_authenticated/teams'
 import { Route as AuthenticatedSignaturesRouteImport } from './routes/_authenticated/signatures'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
-import { Route as AuthenticatedEditorRouteImport } from './routes/_authenticated/editor'
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCertificatesRouteImport } from './routes/_authenticated/certificates'
@@ -57,11 +56,6 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedEditorRoute = AuthenticatedEditorRouteImport.update({
-  id: '/editor',
-  path: '/editor',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedDocumentsRoute = AuthenticatedDocumentsRouteImport.update({
   id: '/documents',
   path: '/documents',
@@ -97,7 +91,6 @@ export interface FileRoutesByFullPath {
   '/certificates': typeof AuthenticatedCertificatesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRoute
-  '/editor': typeof AuthenticatedEditorRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/signatures': typeof AuthenticatedSignaturesRoute
   '/teams': typeof AuthenticatedTeamsRoute
@@ -111,7 +104,6 @@ export interface FileRoutesByTo {
   '/certificates': typeof AuthenticatedCertificatesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRoute
-  '/editor': typeof AuthenticatedEditorRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/signatures': typeof AuthenticatedSignaturesRoute
   '/teams': typeof AuthenticatedTeamsRoute
@@ -127,7 +119,6 @@ export interface FileRoutesById {
   '/_authenticated/certificates': typeof AuthenticatedCertificatesRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
-  '/_authenticated/editor': typeof AuthenticatedEditorRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/signatures': typeof AuthenticatedSignaturesRoute
   '/_authenticated/teams': typeof AuthenticatedTeamsRoute
@@ -143,7 +134,6 @@ export interface FileRouteTypes {
     | '/certificates'
     | '/dashboard'
     | '/documents'
-    | '/editor'
     | '/settings'
     | '/signatures'
     | '/teams'
@@ -157,7 +147,6 @@ export interface FileRouteTypes {
     | '/certificates'
     | '/dashboard'
     | '/documents'
-    | '/editor'
     | '/settings'
     | '/signatures'
     | '/teams'
@@ -172,7 +161,6 @@ export interface FileRouteTypes {
     | '/_authenticated/certificates'
     | '/_authenticated/dashboard'
     | '/_authenticated/documents'
-    | '/_authenticated/editor'
     | '/_authenticated/settings'
     | '/_authenticated/signatures'
     | '/_authenticated/teams'
@@ -236,13 +224,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/editor': {
-      id: '/_authenticated/editor'
-      path: '/editor'
-      fullPath: '/editor'
-      preLoaderRoute: typeof AuthenticatedEditorRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/documents': {
       id: '/_authenticated/documents'
       path: '/documents'
@@ -287,7 +268,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCertificatesRoute: typeof AuthenticatedCertificatesRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
-  AuthenticatedEditorRoute: typeof AuthenticatedEditorRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedSignaturesRoute: typeof AuthenticatedSignaturesRoute
   AuthenticatedTeamsRoute: typeof AuthenticatedTeamsRoute
@@ -300,7 +280,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCertificatesRoute: AuthenticatedCertificatesRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
-  AuthenticatedEditorRoute: AuthenticatedEditorRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedSignaturesRoute: AuthenticatedSignaturesRoute,
   AuthenticatedTeamsRoute: AuthenticatedTeamsRoute,
