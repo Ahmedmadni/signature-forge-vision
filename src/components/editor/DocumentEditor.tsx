@@ -244,23 +244,29 @@ export function DocumentEditor({ docId, title, src }: Props) {
               className="hidden shrink-0 overflow-hidden xl:block"
             >
               <div className="max-h-[76vh] w-[288px] space-y-5 overflow-y-auto rounded-2xl border border-border bg-card/60 p-4">
-                <div>
-                  <h3 className="mb-3 flex items-center gap-2 font-display text-sm font-semibold">
-                    <PenTool className="h-4 w-4 text-primary" /> الحقول التفاعلية
-                  </h3>
-                  <FieldPalette armed={armed} onPick={(t) => setArmed((c) => (c === t ? null : t))} />
-                </div>
-                <div className="h-px bg-border" />
-                <PropertiesPanel
-                  field={selectedField}
-                  pageCount={pdf.numPages}
-                  currentPage={currentPage}
-                  onChange={(patch) => selectedField && store.updateField(selectedField.id, patch)}
-                  onApply={(scope) =>
-                    selectedField &&
-                    store.applyToPages(selectedField, scope, selectedField.page, pdf.numPages)
-                  }
-                />
+                {showHistory ? (
+                  <VersionHistoryPanel store={store} />
+                ) : (
+                  <>
+                    <div>
+                      <h3 className="mb-3 flex items-center gap-2 font-display text-sm font-semibold">
+                        <PenTool className="h-4 w-4 text-primary" /> الحقول التفاعلية
+                      </h3>
+                      <FieldPalette armed={armed} onPick={(t) => setArmed((c) => (c === t ? null : t))} />
+                    </div>
+                    <div className="h-px bg-border" />
+                    <PropertiesPanel
+                      field={selectedField}
+                      pageCount={pdf.numPages}
+                      currentPage={currentPage}
+                      onChange={(patch) => selectedField && store.updateField(selectedField.id, patch)}
+                      onApply={(scope) =>
+                        selectedField &&
+                        store.applyToPages(selectedField, scope, selectedField.page, pdf.numPages)
+                      }
+                    />
+                  </>
+                )}
               </div>
             </motion.div>
           )}
