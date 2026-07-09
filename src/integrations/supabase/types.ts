@@ -189,9 +189,13 @@ export type Database = {
           created_by: string | null
           document_id: string
           fields_snapshot: Json
+          file_path: string | null
           id: string
+          kind: string
           label: string | null
           modified_count: number
+          operation: string | null
+          page_count: number | null
           version_number: number
         }
         Insert: {
@@ -199,9 +203,13 @@ export type Database = {
           created_by?: string | null
           document_id: string
           fields_snapshot?: Json
+          file_path?: string | null
           id?: string
+          kind?: string
           label?: string | null
           modified_count?: number
+          operation?: string | null
+          page_count?: number | null
           version_number: number
         }
         Update: {
@@ -209,9 +217,13 @@ export type Database = {
           created_by?: string | null
           document_id?: string
           fields_snapshot?: Json
+          file_path?: string | null
           id?: string
+          kind?: string
           label?: string | null
           modified_count?: number
+          operation?: string | null
+          page_count?: number | null
           version_number?: number
         }
         Relationships: [
