@@ -129,8 +129,10 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <Outlet />
-        <Toaster position="top-right" richColors />
+        <TooltipProvider delayDuration={200}>
+          <Outlet />
+          <Toaster position="top-right" richColors />
+        </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );
