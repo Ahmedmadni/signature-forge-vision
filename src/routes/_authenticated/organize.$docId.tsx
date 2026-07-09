@@ -1,39 +1,39 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Download, Send, Loader2, FileWarning, Layers } from "lucide-react";
+import { ArrowRight, Loader2, FileWarning, PenTool } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { Button } from "@/components/ui/button";
-import { DocumentEditor } from "@/components/editor/DocumentEditor";
+import { PageOrganizer } from "@/components/editor/PageOrganizer";
 import { NetworkStatus } from "@/components/editor/NetworkStatus";
 import { useDocument } from "@/lib/editor/use-documents";
 
-export const Route = createFileRoute("/_authenticated/editor/$docId")({
-  head: () => ({ meta: [{ title: "تحرير مستند — ساين فورج" }] }),
-  component: EditorPage,
+export const Route = createFileRoute("/_authenticated/organize/$docId")({
+  head: () => ({ meta: [{ title: "تنظيم الصفحات — ساين فورج" }] }),
+  component: OrganizePage,
 });
 
-function EditorPage() {
+function OrganizePage() {
   const { docId } = Route.useParams();
   const { document, src, loading, error } = useDocument(docId);
 
   return (
     <>
       <PageHeader
-        title={document?.title ?? "تحرير المستند"}
-        subtitle="ضع حقول التوقيع والبيانات — حفظ تلقائي دائم مع سجل إصدارات."
+        title={document?.title ?? "تنظيم الصفحات"}
+        subtitle="محرّك تحرير الصفحات — إعادة ترتيب، تدوير، حذف، دمج، تقسيم واستخراج مع سجل مراجعات كامل."
         actions={
           <div className="flex gap-2">
             <Button variant="outline" asChild>
-              <Link to="/editor"><ArrowRight className="h-4 w-4" /> رجوع</Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link to="/organize/$docId" params={{ docId }}>
-                <Layers className="h-4 w-4" /> تنظيم الصفحات
+              <Link to="/editor">
+                <ArrowRight className="h-4 w-4" /> رجوع
               </Link>
             </Button>
-            <Button variant="outline"><Download className="h-4 w-4" /> تنزيل</Button>
-            <Button className="bg-gradient-brand text-primary-foreground shadow-glow">
-              <Send className="h-4 w-4" /> إرسال للتوقيع
-            </Button>
+            {document && (
+              <Button asChild className="bg-gradient-brand text-primary-foreground shadow-glow">
+                <Link to="/editor/$docId" params={{ docId }}>
+                  <PenTool className="h-4 w-4" /> محرّر الحقول
+                </Link>
+              </Button>
+            )}
           </div>
         }
       />
@@ -58,7 +58,7 @@ function EditorPage() {
           </div>
         </div>
       ) : (
-        <DocumentEditor docId={document.id} title={document.title} src={src} />
+        <PageOrganizer documentId={document.id} title={document.title} src={src} />
       )}
     </>
   );
