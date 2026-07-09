@@ -22,6 +22,7 @@ import { Route as AuthenticatedCertificatesRouteImport } from './routes/_authent
 import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated/audit'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
 import { Route as AuthenticatedEditorIndexRouteImport } from './routes/_authenticated/editor.index'
+import { Route as AuthenticatedOrganizeDocIdRouteImport } from './routes/_authenticated/organize.$docId'
 import { Route as AuthenticatedEditorDocIdRouteImport } from './routes/_authenticated/editor.$docId'
 
 const AuthRoute = AuthRouteImport.update({
@@ -90,6 +91,12 @@ const AuthenticatedEditorIndexRoute =
     path: '/editor/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedOrganizeDocIdRoute =
+  AuthenticatedOrganizeDocIdRouteImport.update({
+    id: '/organize/$docId',
+    path: '/organize/$docId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedEditorDocIdRoute =
   AuthenticatedEditorDocIdRouteImport.update({
     id: '/editor/$docId',
@@ -110,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/teams': typeof AuthenticatedTeamsRoute
   '/templates': typeof AuthenticatedTemplatesRoute
   '/editor/$docId': typeof AuthenticatedEditorDocIdRoute
+  '/organize/$docId': typeof AuthenticatedOrganizeDocIdRoute
   '/editor/': typeof AuthenticatedEditorIndexRoute
 }
 export interface FileRoutesByTo {
@@ -125,6 +133,7 @@ export interface FileRoutesByTo {
   '/teams': typeof AuthenticatedTeamsRoute
   '/templates': typeof AuthenticatedTemplatesRoute
   '/editor/$docId': typeof AuthenticatedEditorDocIdRoute
+  '/organize/$docId': typeof AuthenticatedOrganizeDocIdRoute
   '/editor': typeof AuthenticatedEditorIndexRoute
 }
 export interface FileRoutesById {
@@ -142,6 +151,7 @@ export interface FileRoutesById {
   '/_authenticated/teams': typeof AuthenticatedTeamsRoute
   '/_authenticated/templates': typeof AuthenticatedTemplatesRoute
   '/_authenticated/editor/$docId': typeof AuthenticatedEditorDocIdRoute
+  '/_authenticated/organize/$docId': typeof AuthenticatedOrganizeDocIdRoute
   '/_authenticated/editor/': typeof AuthenticatedEditorIndexRoute
 }
 export interface FileRouteTypes {
@@ -159,6 +169,7 @@ export interface FileRouteTypes {
     | '/teams'
     | '/templates'
     | '/editor/$docId'
+    | '/organize/$docId'
     | '/editor/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -174,6 +185,7 @@ export interface FileRouteTypes {
     | '/teams'
     | '/templates'
     | '/editor/$docId'
+    | '/organize/$docId'
     | '/editor'
   id:
     | '__root__'
@@ -190,6 +202,7 @@ export interface FileRouteTypes {
     | '/_authenticated/teams'
     | '/_authenticated/templates'
     | '/_authenticated/editor/$docId'
+    | '/_authenticated/organize/$docId'
     | '/_authenticated/editor/'
   fileRoutesById: FileRoutesById
 }
@@ -292,6 +305,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEditorIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/organize/$docId': {
+      id: '/_authenticated/organize/$docId'
+      path: '/organize/$docId'
+      fullPath: '/organize/$docId'
+      preLoaderRoute: typeof AuthenticatedOrganizeDocIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/editor/$docId': {
       id: '/_authenticated/editor/$docId'
       path: '/editor/$docId'
@@ -313,6 +333,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTeamsRoute: typeof AuthenticatedTeamsRoute
   AuthenticatedTemplatesRoute: typeof AuthenticatedTemplatesRoute
   AuthenticatedEditorDocIdRoute: typeof AuthenticatedEditorDocIdRoute
+  AuthenticatedOrganizeDocIdRoute: typeof AuthenticatedOrganizeDocIdRoute
   AuthenticatedEditorIndexRoute: typeof AuthenticatedEditorIndexRoute
 }
 
@@ -327,6 +348,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTeamsRoute: AuthenticatedTeamsRoute,
   AuthenticatedTemplatesRoute: AuthenticatedTemplatesRoute,
   AuthenticatedEditorDocIdRoute: AuthenticatedEditorDocIdRoute,
+  AuthenticatedOrganizeDocIdRoute: AuthenticatedOrganizeDocIdRoute,
   AuthenticatedEditorIndexRoute: AuthenticatedEditorIndexRoute,
 }
 

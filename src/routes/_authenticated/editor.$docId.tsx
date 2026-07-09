@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Download, Send, Loader2, FileWarning } from "lucide-react";
+import { ArrowRight, Download, Send, Loader2, FileWarning, Layers } from "lucide-react";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { Button } from "@/components/ui/button";
 import { DocumentEditor } from "@/components/editor/DocumentEditor";
