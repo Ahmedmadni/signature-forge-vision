@@ -156,6 +156,7 @@ export function PageOrganizer({ documentId, title, src }: Props) {
   );
 
   return (
+    <TooltipProvider delayDuration={200}>
     <div className="flex flex-col gap-3">
       {/* شريط الأدوات */}
       <div className="flex flex-wrap items-center gap-1 rounded-2xl border border-border bg-card/60 p-2">
