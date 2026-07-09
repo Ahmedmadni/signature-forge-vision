@@ -27,7 +27,7 @@ function EditorPage() {
             </Button>
             <Button variant="outline" asChild>
               <Link to="/organize/$docId" params={{ docId }}>
-                <Layers class="h-4 w-4" /> تنظيم الصفحات
+                <Layers className="h-4 w-4" /> تنظيم الصفحات
               </Link>
             </Button>
             <Button variant="outline"><Download className="h-4 w-4" /> تنزيل</Button>
