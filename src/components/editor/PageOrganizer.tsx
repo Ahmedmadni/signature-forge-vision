@@ -411,5 +411,6 @@ export function PageOrganizer({ documentId, title, src }: Props) {
         </DialogContent>
       </Dialog>
     </div>
+    </TooltipProvider>
   );
 }
