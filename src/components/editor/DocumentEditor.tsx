@@ -260,12 +260,19 @@ export function DocumentEditor({ docId, title, src }: Props) {
                         onSelect={() => setSelectedId(f.id)}
                         onChange={(patch) => store.updateField(f.id, patch)}
                         onCommit={store.commitNow}
+                        onEdit={() => {
+                          if (f.type === "signature" || f.type === "initials" || f.type === "stamp") {
+                            setSelectedId(f.id);
+                            setSignId(f.id);
+                          }
+                        }}
                         onRemove={() => {
                           store.removeField(f.id);
                           setSelectedId(null);
                           store.commitNow();
                         }}
                       />
+
                     ))}
                 </div>
               );
