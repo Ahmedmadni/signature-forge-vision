@@ -39,6 +39,8 @@ export function PlacedFieldView({
   const meta = fieldMeta[field.type];
   const Icon = icons[field.type];
   const ref = useRef<HTMLDivElement>(null);
+  const image = (field.metadata as Record<string, unknown> | undefined)?.image as string | undefined;
+
 
   const left = field.xPct * pageWidth;
   const top = field.yPct * pageHeight;
