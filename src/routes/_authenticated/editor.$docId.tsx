@@ -30,7 +30,7 @@ function EditorPage() {
                 <Layers className="h-4 w-4" /> تنظيم الصفحات
               </Link>
             </Button>
-            <Button variant="outline"><Download className="h-4 w-4" /> تنزيل</Button>
+
             <Button className="bg-gradient-brand text-primary-foreground shadow-glow">
               <Send className="h-4 w-4" /> إرسال للتوقيع
             </Button>
