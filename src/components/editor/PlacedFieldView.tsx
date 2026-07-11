@@ -22,6 +22,7 @@ interface Props {
   onChange: (patch: Partial<EditorField>) => void;
   onRemove: () => void;
   onCommit?: () => void;
+  onEdit?: () => void;
 }
 
 export function PlacedFieldView({
