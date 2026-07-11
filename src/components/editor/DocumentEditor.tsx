@@ -1,15 +1,18 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { FileWarning, Loader2, PenTool } from "lucide-react";
+import { FileWarning, Loader2, PenTool, Download } from "lucide-react";
 import { type FieldType } from "@/lib/editor/types";
 import { useEditorStore } from "@/lib/editor/use-editor-store";
 import { usePdfDocument, PdfPageCanvas } from "@/lib/editor/use-pdf-document";
+import { exportSignedPdf } from "@/lib/editor/export-pdf";
 import { PlacedFieldView } from "./PlacedFieldView";
 import { FieldPalette } from "./FieldPalette";
 import { PropertiesPanel } from "./PropertiesPanel";
 import { ThumbnailSidebar } from "./ThumbnailSidebar";
 import { EditorToolbar } from "./EditorToolbar";
 import { VersionHistoryPanel } from "./VersionHistoryPanel";
+import { SignaturePad } from "./SignaturePad";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   docId: string;
@@ -32,6 +35,8 @@ export function DocumentEditor({ docId, title, src }: Props) {
   const [showThumbs, setShowThumbs] = useState(true);
   const [showProps, setShowProps] = useState(true);
   const [showHistory, setShowHistory] = useState(false);
+  const [signId, setSignId] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   // قياس منطقة العرض
   useLayoutEffect(() => {
@@ -113,7 +118,27 @@ export function DocumentEditor({ docId, title, src }: Props) {
     const id = store.addField(type, page, x, y);
     setSelectedId(id);
     setArmed(null);
+    if (type === "signature" || type === "initials" || type === "stamp") setSignId(id);
   };
+
+  const signField = store.fields.find((f) => f.id === signId) ?? null;
+  const signKind =
+    signField && (signField.type === "signature" || signField.type === "initials" || signField.type === "stamp")
+      ? signField.type
+      : "signature";
+
+  const handleDownload = useCallback(async () => {
+    setExporting(true);
+    try {
+      await store.commitNow();
+      await exportSignedPdf(src, store.fields, title);
+    } catch (err) {
+      console.error("تعذّر تصدير المستند", err);
+    } finally {
+      setExporting(false);
+    }
+  }, [src, store, title]);
+
 
   if (loading) {
     return (
@@ -140,6 +165,20 @@ export function DocumentEditor({ docId, title, src }: Props) {
 
   return (
     <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm text-muted-foreground">
+          اسحب حقلًا إلى المستند، ثم ارسم أو اكتب توقيعك، وأخيرًا نزّل الملف الموقّع.
+        </p>
+        <Button
+          onClick={handleDownload}
+          disabled={exporting}
+          className="bg-gradient-brand text-primary-foreground shadow-glow"
+        >
+          {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+          تنزيل المستند الموقّع
+        </Button>
+      </div>
+
       <EditorToolbar
         zoom={zoom}
         saveStatus={store.saveStatus}
@@ -221,12 +260,19 @@ export function DocumentEditor({ docId, title, src }: Props) {
                         onSelect={() => setSelectedId(f.id)}
                         onChange={(patch) => store.updateField(f.id, patch)}
                         onCommit={store.commitNow}
+                        onEdit={() => {
+                          if (f.type === "signature" || f.type === "initials" || f.type === "stamp") {
+                            setSelectedId(f.id);
+                            setSignId(f.id);
+                          }
+                        }}
                         onRemove={() => {
                           store.removeField(f.id);
                           setSelectedId(null);
                           store.commitNow();
                         }}
                       />
+
                     ))}
                 </div>
               );
@@ -272,6 +318,19 @@ export function DocumentEditor({ docId, title, src }: Props) {
           )}
         </AnimatePresence>
       </div>
+
+      <SignaturePad
+        open={signId !== null}
+        kind={signKind}
+        onClose={() => setSignId(null)}
+        onConfirm={(dataUrl) => {
+          if (!signId) return;
+          store.updateField(signId, {
+            metadata: { ...(signField?.metadata ?? {}), image: dataUrl },
+          });
+          store.commitNow();
+        }}
+      />
     </div>
   );
 }
