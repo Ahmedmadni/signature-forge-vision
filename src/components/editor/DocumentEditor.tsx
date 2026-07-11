@@ -35,6 +35,8 @@ export function DocumentEditor({ docId, title, src }: Props) {
   const [showThumbs, setShowThumbs] = useState(true);
   const [showProps, setShowProps] = useState(true);
   const [showHistory, setShowHistory] = useState(false);
+  const [signId, setSignId] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   // قياس منطقة العرض
   useLayoutEffect(() => {
