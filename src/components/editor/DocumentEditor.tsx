@@ -1,15 +1,18 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { FileWarning, Loader2, PenTool } from "lucide-react";
+import { FileWarning, Loader2, PenTool, Download } from "lucide-react";
 import { type FieldType } from "@/lib/editor/types";
 import { useEditorStore } from "@/lib/editor/use-editor-store";
 import { usePdfDocument, PdfPageCanvas } from "@/lib/editor/use-pdf-document";
+import { exportSignedPdf } from "@/lib/editor/export-pdf";
 import { PlacedFieldView } from "./PlacedFieldView";
 import { FieldPalette } from "./FieldPalette";
 import { PropertiesPanel } from "./PropertiesPanel";
 import { ThumbnailSidebar } from "./ThumbnailSidebar";
 import { EditorToolbar } from "./EditorToolbar";
 import { VersionHistoryPanel } from "./VersionHistoryPanel";
+import { SignaturePad } from "./SignaturePad";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   docId: string;
