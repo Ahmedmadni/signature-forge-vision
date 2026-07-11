@@ -34,6 +34,7 @@ export function PlacedFieldView({
   onChange,
   onRemove,
   onCommit,
+  onEdit,
 }: Props) {
   const meta = fieldMeta[field.type];
   const Icon = icons[field.type];
