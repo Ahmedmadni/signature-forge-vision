@@ -120,6 +120,10 @@ export function PlacedFieldView({
       initial={{ scale: 0.9, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       onPointerDown={startDrag}
+      onDoubleClick={(e) => {
+        e.stopPropagation();
+        onEdit?.();
+      }}
       className={cn(
         "group absolute cursor-move touch-none select-none rounded-md border-2",
         selected ? "border-primary shadow-glow" : "border-dashed",
@@ -132,11 +136,13 @@ export function PlacedFieldView({
         transform: `rotate(${field.rotation}deg)`,
         opacity: field.opacity,
         borderColor: selected ? undefined : `color-mix(in oklch, ${meta.color} 60%, transparent)`,
-        background: `color-mix(in oklch, ${meta.color} 12%, transparent)`,
+        background: image ? "transparent" : `color-mix(in oklch, ${meta.color} 12%, transparent)`,
       }}
     >
       <div className="flex h-full w-full items-center justify-center gap-1 overflow-hidden px-1 text-center">
-        {field.type === "checkbox" ? (
+        {image ? (
+          <img src={image} alt="" className="h-full w-full object-contain" draggable={false} />
+        ) : field.type === "checkbox" ? (
           <CheckSquare className="h-full w-full p-0.5" style={{ color: meta.color }} />
         ) : field.value ? (
           <span
@@ -154,6 +160,7 @@ export function PlacedFieldView({
           </>
         )}
       </div>
+
 
       {selected && (
         <>
