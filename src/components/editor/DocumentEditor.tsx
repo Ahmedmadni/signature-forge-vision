@@ -118,7 +118,27 @@ export function DocumentEditor({ docId, title, src }: Props) {
     const id = store.addField(type, page, x, y);
     setSelectedId(id);
     setArmed(null);
+    if (type === "signature" || type === "initials" || type === "stamp") setSignId(id);
   };
+
+  const signField = store.fields.find((f) => f.id === signId) ?? null;
+  const signKind =
+    signField && (signField.type === "signature" || signField.type === "initials" || signField.type === "stamp")
+      ? signField.type
+      : "signature";
+
+  const handleDownload = useCallback(async () => {
+    setExporting(true);
+    try {
+      await store.commitNow();
+      await exportSignedPdf(src, store.fields, title);
+    } catch (err) {
+      console.error("تعذّر تصدير المستند", err);
+    } finally {
+      setExporting(false);
+    }
+  }, [src, store, title]);
+
 
   if (loading) {
     return (
