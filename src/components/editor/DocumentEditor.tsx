@@ -318,6 +318,19 @@ export function DocumentEditor({ docId, title, src }: Props) {
           )}
         </AnimatePresence>
       </div>
+
+      <SignaturePad
+        open={signId !== null}
+        kind={signKind}
+        onClose={() => setSignId(null)}
+        onConfirm={(dataUrl) => {
+          if (!signId) return;
+          store.updateField(signId, {
+            metadata: { ...(signField?.metadata ?? {}), image: dataUrl },
+          });
+          store.commitNow();
+        }}
+      />
     </div>
   );
 }
