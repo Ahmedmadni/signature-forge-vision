@@ -165,6 +165,20 @@ export function DocumentEditor({ docId, title, src }: Props) {
 
   return (
     <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm text-muted-foreground">
+          اسحب حقلًا إلى المستند، ثم ارسم أو اكتب توقيعك، وأخيرًا نزّل الملف الموقّع.
+        </p>
+        <Button
+          onClick={handleDownload}
+          disabled={exporting}
+          className="bg-gradient-brand text-primary-foreground shadow-glow"
+        >
+          {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+          تنزيل المستند الموقّع
+        </Button>
+      </div>
+
       <EditorToolbar
         zoom={zoom}
         saveStatus={store.saveStatus}
