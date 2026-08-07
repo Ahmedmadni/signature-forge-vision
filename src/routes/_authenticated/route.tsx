@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { AppShell } from "@/components/dashboard/AppShell";
+import { MobileShell } from "@/components/app/MobileShell";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -10,8 +10,8 @@ export const Route = createFileRoute("/_authenticated")({
     return { user: data.user };
   },
   component: () => (
-    <AppShell>
+    <MobileShell>
       <Outlet />
-    </AppShell>
+    </MobileShell>
   ),
 });
