@@ -10,7 +10,7 @@ import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
-  head: () => ({ meta: [{ title: "تسجيل الدخول — ساين فورج" }] }),
+  head: () => ({ meta: [{ title: "تسجيل الدخول — وقِّع" }] }),
   component: AuthPage,
 });
 
@@ -24,7 +24,7 @@ function AuthPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/dashboard" });
+      if (data.session) navigate({ to: "/home" });
     });
   }, [navigate]);
 
@@ -38,13 +38,13 @@ function AuthPage() {
           options: { emailRedirectTo: window.location.origin, data: { display_name: name } },
         });
         if (error) throw error;
-        toast.success("تم إنشاء الحساب — مرحبًا بك في ساين فورج!");
-        navigate({ to: "/dashboard" });
+        toast.success("تم إنشاء الحساب — مرحبًا بك في وقِّع!");
+        navigate({ to: "/home" });
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         toast.success("مرحبًا بعودتك!");
-        navigate({ to: "/dashboard" });
+        navigate({ to: "/home" });
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "فشل تسجيل الدخول");
@@ -57,7 +57,7 @@ function AuthPage() {
     const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
     if (result.error) { toast.error("فشل تسجيل الدخول عبر جوجل"); return; }
     if (result.redirected) return;
-    navigate({ to: "/dashboard" });
+    navigate({ to: "/home" });
   };
 
   return (
@@ -72,14 +72,14 @@ function AuthPage() {
           <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-brand shadow-glow">
             <Sparkles className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="font-display text-xl font-semibold">ساين فورج</span>
+          <span className="font-display text-xl font-semibold">وقِّع</span>
         </Link>
 
         <h1 className="font-display text-2xl font-semibold tracking-tight">
           {mode === "signin" ? "مرحبًا بعودتك" : "أنشئ حسابك"}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {mode === "signin" ? "سجّل الدخول إلى مساحة عمل مؤسستك." : "ابدأ توقيع المستندات في ثوانٍ."}
+          {mode === "signin" ? "سجّل الدخول إلى تطبيق وقِّع." : "ابدأ توقيع المستندات في ثوانٍ."}
         </p>
 
         <Button variant="outline" onClick={google} className="mt-6 w-full" type="button">
@@ -119,7 +119,7 @@ function AuthPage() {
         </form>
 
         <p className="mt-5 text-center text-sm text-muted-foreground">
-          {mode === "signin" ? "جديد على ساين فورج؟ " : "لديك حساب بالفعل؟ "}
+          {mode === "signin" ? "جديد على وقِّع؟ " : "لديك حساب بالفعل؟ "}
           <button
             onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
             className="font-medium text-primary hover:underline"
