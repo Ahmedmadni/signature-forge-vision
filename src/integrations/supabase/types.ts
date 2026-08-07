@@ -278,6 +278,36 @@ export type Database = {
         }
         Relationships: []
       }
+      entitlements: {
+        Row: {
+          expires_at: string | null
+          external_ref: string | null
+          plan: string
+          provider: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          expires_at?: string | null
+          external_ref?: string | null
+          plan?: string
+          provider?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          expires_at?: string | null
+          external_ref?: string | null
+          plan?: string
+          provider?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       field_versions: {
         Row: {
           changed_by: string | null
@@ -481,6 +511,27 @@ export type Database = {
         }
         Relationships: []
       }
+      usage_days: {
+        Row: {
+          day: string
+          pages_used: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          day?: string
+          pages_used?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          day?: string
+          pages_used?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -504,6 +555,26 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      consume_signing_pages: {
+        Args: { p_pages: number }
+        Returns: {
+          allowed: boolean
+          daily_limit: number
+          pages_used: number
+          remaining: number
+          unlimited: boolean
+        }[]
+      }
+      get_usage_status: {
+        Args: never
+        Returns: {
+          daily_limit: number
+          pages_used: number
+          plan: string
+          remaining: number
+          unlimited: boolean
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

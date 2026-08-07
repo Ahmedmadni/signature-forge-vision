@@ -1,89 +1,101 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { motion } from "framer-motion";
-import {
-  Sparkles, ShieldCheck, PenTool, FileCheck2, ArrowRight,
-  Fingerprint, ScanLine, Layers, Lock,
-} from "lucide-react";
+import { Signature, FileUp, PenLine, Download, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DeveloperFooter } from "@/components/app/DeveloperFooter";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
-  component: Landing,
+  head: () => ({
+    meta: [
+      { title: "وقِّع — تطبيق توقيع ملفات PDF إلكترونيًا" },
+      { name: "description", content: "تطبيق بسيط لتوقيع ملفات PDF: ارفع الملف، ضع توقيعك بإصبعك، واحفظ المستند الموقّع على جهازك خلال ثوانٍ." },
+      { property: "og:title", content: "وقِّع — تطبيق توقيع ملفات PDF إلكترونيًا" },
+      { property: "og:description", content: "تطبيق بسيط لتوقيع ملفات PDF: ارفع الملف، ضع توقيعك بإصبعك، واحفظ المستند الموقّع على جهازك خلال ثوانٍ." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
+  component: LandingPage,
 });
 
-const features = [
-  { icon: PenTool, title: "أربع طرق للتوقيع", desc: "ارسم، أو اكتب بخطوط التوقيع، أو ارفع صورة، أو ولّد توقيعًا بالذكاء الاصطناعي." },
-  { icon: ScanLine, title: "كشف الحقول بالذكاء الاصطناعي", desc: "يقرأ التعرّف الضوئي مستندك ويضع حقول التوقيع والتاريخ والنص تلقائيًا." },
-  { icon: Layers, title: "محرر PDF احترافي", desc: "تكبير حتى 800%، محاذاة للشبكة، تدوير، دمج، تقسيم، وإعادة ترتيب الصفحات." },
-  { icon: ShieldCheck, title: "أمان المؤسسات", desc: "تشفير AES-256، شهادات رقمية، أختام زمنية، وسجلات تدقيق كاملة." },
-  { icon: Fingerprint, title: "التحقق بالبصمة", desc: "لكل مستند بصمة تكشف أي تلاعب من الإرسال حتى التوقيع." },
-  { icon: FileCheck2, title: "توزيع ذكي", desc: "وقّع صفحة واحدة أو محدّدة أو الكل أو الفردية أو الزوجية أو نطاقات مخصّصة فورًا." },
+const steps = [
+  { icon: FileUp, t: "ارفع ملف PDF", b: "اختر المستند من جهازك" },
+  { icon: PenLine, t: "ضع توقيعك", b: "ارسمه أو اكتبه أو ارفع صورة" },
+  { icon: Download, t: "احفظ المستند", b: "نزّل النسخة الموقّعة فورًا" },
 ];
 
-function Landing() {
+function LandingPage() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) navigate({ to: "/home" });
+    });
+  }, [navigate]);
+
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5">
-        <div className="flex items-center gap-2.5">
-          <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-brand shadow-glow">
-            <Sparkles className="h-5 w-5 text-primary-foreground" />
-          </div>
-          <span className="font-display text-lg font-semibold">ساين فورج</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" asChild><Link to="/auth">تسجيل الدخول</Link></Button>
-          <Button asChild className="bg-gradient-brand text-primary-foreground shadow-glow">
-            <Link to="/auth">ابدأ الآن</Link>
-          </Button>
-        </div>
-      </header>
+    <div className="flex min-h-screen flex-col bg-background">
+      <div className="pointer-events-none fixed inset-0 bg-gradient-glow opacity-60" />
 
-      <section className="relative overflow-hidden px-5 pb-24 pt-16 text-center">
-        <div className="pointer-events-none absolute inset-0 grid-bg opacity-40" />
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-[500px] bg-gradient-glow" />
+      <main className="relative mx-auto flex w-full max-w-2xl flex-1 flex-col items-center px-5 pt-16 text-center">
         <motion.div
-          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-          className="relative mx-auto max-w-3xl"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="flex flex-col items-center"
         >
-          <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-border glass px-4 py-1.5 text-xs font-medium">
-            <Lock className="h-3.5 w-3.5 text-accent" /> تشفير AES-256 · شهادات رقمية · سجل تدقيق
+          <div className="grid h-16 w-16 place-items-center rounded-3xl bg-gradient-brand shadow-glow">
+            <Signature className="h-8 w-8 text-primary-foreground" />
           </div>
-          <h1 className="font-display text-4xl font-semibold leading-tight tracking-tight md:text-6xl">
-            الطريقة المؤسسية <span className="text-gradient">لتوقيع أي شيء</span>
+          <h1 className="mt-5 font-display text-3xl font-semibold tracking-tight">
+            وقِّع ملفات PDF في ثوانٍ
           </h1>
-          <p className="mx-auto mt-5 max-w-xl text-base text-muted-foreground md:text-lg">
-            ارفع وجهّز ووقّع ملفات PDF والمستندات بمساعدة الذكاء الاصطناعي ومحرّر احترافي وأمان سيحبّه فريقك القانوني.
+          <p className="mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
+            تطبيق بسيط ومباشر لإضافة توقيعك الإلكتروني إلى المستندات — بدون لوحات تحكم معقّدة، وبدون
+            رفع ملفاتك إلى أي خادم.
           </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <Button size="lg" asChild className="bg-gradient-brand text-primary-foreground shadow-glow">
-              <Link to="/auth">افتح لوحة التحكم <ArrowRight className="h-4 w-4" /></Link>
-            </Button>
-            <Button size="lg" variant="outline" asChild><Link to="/auth">احجز عرضًا توضيحيًا</Link></Button>
-          </div>
-        </motion.div>
-      </section>
 
-      <section className="mx-auto max-w-7xl px-5 pb-24">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map((f, i) => (
+          <Button
+            asChild
+            size="lg"
+            className="mt-7 w-full max-w-xs bg-gradient-brand text-primary-foreground shadow-glow"
+          >
+            <Link to="/auth">ابدأ الآن مجانًا</Link>
+          </Button>
+          <p className="mt-2 text-xs text-muted-foreground">3 صفحات مجانية كل يوم</p>
+        </motion.div>
+
+        <div className="mt-12 grid w-full gap-3">
+          {steps.map((s, i) => (
             <motion.div
-              key={f.title}
-              initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }} transition={{ delay: i * 0.05 }}
-              className="rounded-2xl border border-border bg-card p-6 shadow-elegant"
+              key={s.t}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 * i + 0.15 }}
+              className="flex items-center gap-4 rounded-2xl border border-border bg-card/60 p-4 text-start"
             >
-              <div className="grid h-11 w-11 place-items-center rounded-xl bg-primary/10 text-primary">
-                <f.icon className="h-5 w-5" />
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-muted">
+                <s.icon className="h-5 w-5 text-primary" />
               </div>
-              <h3 className="mt-4 font-display text-lg font-semibold">{f.title}</h3>
-              <p className="mt-1.5 text-sm text-muted-foreground">{f.desc}</p>
+              <div>
+                <p className="text-sm font-semibold">{s.t}</p>
+                <p className="text-xs text-muted-foreground">{s.b}</p>
+              </div>
             </motion.div>
           ))}
         </div>
-      </section>
 
-      <footer className="border-t border-border px-5 py-8 text-center text-sm text-muted-foreground">
-        © {new Date().getFullYear()} ساين فورج. التوقيع الإلكتروني للمؤسسات.
-      </footer>
+        <div className="mt-6 flex items-center gap-2 rounded-full border border-border bg-card/60 px-4 py-2 text-xs text-muted-foreground">
+          <ShieldCheck className="h-4 w-4 text-primary" />
+          التوقيع يتم محليًا على جهازك
+        </div>
+      </main>
+
+      <div className="relative mx-auto w-full max-w-2xl">
+        <DeveloperFooter className="mt-12" />
+      </div>
     </div>
   );
 }
