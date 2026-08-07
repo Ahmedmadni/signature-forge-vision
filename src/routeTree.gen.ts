@@ -12,18 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedTemplatesRouteImport } from './routes/_authenticated/templates'
-import { Route as AuthenticatedTeamsRouteImport } from './routes/_authenticated/teams'
-import { Route as AuthenticatedSignaturesRouteImport } from './routes/_authenticated/signatures'
-import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
-import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
-import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
-import { Route as AuthenticatedCertificatesRouteImport } from './routes/_authenticated/certificates'
-import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated/audit'
-import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
-import { Route as AuthenticatedEditorIndexRouteImport } from './routes/_authenticated/editor.index'
-import { Route as AuthenticatedOrganizeDocIdRouteImport } from './routes/_authenticated/organize.$docId'
-import { Route as AuthenticatedEditorDocIdRouteImport } from './routes/_authenticated/editor.$docId'
+import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -39,171 +28,35 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedTemplatesRoute = AuthenticatedTemplatesRouteImport.update({
-  id: '/templates',
-  path: '/templates',
+const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
+  id: '/home',
+  path: '/home',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedTeamsRoute = AuthenticatedTeamsRouteImport.update({
-  id: '/teams',
-  path: '/teams',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedSignaturesRoute = AuthenticatedSignaturesRouteImport.update({
-  id: '/signatures',
-  path: '/signatures',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedDocumentsRoute = AuthenticatedDocumentsRouteImport.update({
-  id: '/documents',
-  path: '/documents',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedCertificatesRoute =
-  AuthenticatedCertificatesRouteImport.update({
-    id: '/certificates',
-    path: '/certificates',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedAuditRoute = AuthenticatedAuditRouteImport.update({
-  id: '/audit',
-  path: '/audit',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedAnalyticsRoute = AuthenticatedAnalyticsRouteImport.update({
-  id: '/analytics',
-  path: '/analytics',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedEditorIndexRoute =
-  AuthenticatedEditorIndexRouteImport.update({
-    id: '/editor/',
-    path: '/editor/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedOrganizeDocIdRoute =
-  AuthenticatedOrganizeDocIdRouteImport.update({
-    id: '/organize/$docId',
-    path: '/organize/$docId',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedEditorDocIdRoute =
-  AuthenticatedEditorDocIdRouteImport.update({
-    id: '/editor/$docId',
-    path: '/editor/$docId',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/analytics': typeof AuthenticatedAnalyticsRoute
-  '/audit': typeof AuthenticatedAuditRoute
-  '/certificates': typeof AuthenticatedCertificatesRoute
-  '/dashboard': typeof AuthenticatedDashboardRoute
-  '/documents': typeof AuthenticatedDocumentsRoute
-  '/settings': typeof AuthenticatedSettingsRoute
-  '/signatures': typeof AuthenticatedSignaturesRoute
-  '/teams': typeof AuthenticatedTeamsRoute
-  '/templates': typeof AuthenticatedTemplatesRoute
-  '/editor/$docId': typeof AuthenticatedEditorDocIdRoute
-  '/organize/$docId': typeof AuthenticatedOrganizeDocIdRoute
-  '/editor/': typeof AuthenticatedEditorIndexRoute
+  '/home': typeof AuthenticatedHomeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/analytics': typeof AuthenticatedAnalyticsRoute
-  '/audit': typeof AuthenticatedAuditRoute
-  '/certificates': typeof AuthenticatedCertificatesRoute
-  '/dashboard': typeof AuthenticatedDashboardRoute
-  '/documents': typeof AuthenticatedDocumentsRoute
-  '/settings': typeof AuthenticatedSettingsRoute
-  '/signatures': typeof AuthenticatedSignaturesRoute
-  '/teams': typeof AuthenticatedTeamsRoute
-  '/templates': typeof AuthenticatedTemplatesRoute
-  '/editor/$docId': typeof AuthenticatedEditorDocIdRoute
-  '/organize/$docId': typeof AuthenticatedOrganizeDocIdRoute
-  '/editor': typeof AuthenticatedEditorIndexRoute
+  '/home': typeof AuthenticatedHomeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
-  '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
-  '/_authenticated/audit': typeof AuthenticatedAuditRoute
-  '/_authenticated/certificates': typeof AuthenticatedCertificatesRoute
-  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
-  '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
-  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
-  '/_authenticated/signatures': typeof AuthenticatedSignaturesRoute
-  '/_authenticated/teams': typeof AuthenticatedTeamsRoute
-  '/_authenticated/templates': typeof AuthenticatedTemplatesRoute
-  '/_authenticated/editor/$docId': typeof AuthenticatedEditorDocIdRoute
-  '/_authenticated/organize/$docId': typeof AuthenticatedOrganizeDocIdRoute
-  '/_authenticated/editor/': typeof AuthenticatedEditorIndexRoute
+  '/_authenticated/home': typeof AuthenticatedHomeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/auth'
-    | '/analytics'
-    | '/audit'
-    | '/certificates'
-    | '/dashboard'
-    | '/documents'
-    | '/settings'
-    | '/signatures'
-    | '/teams'
-    | '/templates'
-    | '/editor/$docId'
-    | '/organize/$docId'
-    | '/editor/'
+  fullPaths: '/' | '/auth' | '/home'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/auth'
-    | '/analytics'
-    | '/audit'
-    | '/certificates'
-    | '/dashboard'
-    | '/documents'
-    | '/settings'
-    | '/signatures'
-    | '/teams'
-    | '/templates'
-    | '/editor/$docId'
-    | '/organize/$docId'
-    | '/editor'
-  id:
-    | '__root__'
-    | '/'
-    | '/_authenticated'
-    | '/auth'
-    | '/_authenticated/analytics'
-    | '/_authenticated/audit'
-    | '/_authenticated/certificates'
-    | '/_authenticated/dashboard'
-    | '/_authenticated/documents'
-    | '/_authenticated/settings'
-    | '/_authenticated/signatures'
-    | '/_authenticated/teams'
-    | '/_authenticated/templates'
-    | '/_authenticated/editor/$docId'
-    | '/_authenticated/organize/$docId'
-    | '/_authenticated/editor/'
+  to: '/' | '/auth' | '/home'
+  id: '__root__' | '/' | '/_authenticated' | '/auth' | '/_authenticated/home'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -235,121 +88,22 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/templates': {
-      id: '/_authenticated/templates'
-      path: '/templates'
-      fullPath: '/templates'
-      preLoaderRoute: typeof AuthenticatedTemplatesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/teams': {
-      id: '/_authenticated/teams'
-      path: '/teams'
-      fullPath: '/teams'
-      preLoaderRoute: typeof AuthenticatedTeamsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/signatures': {
-      id: '/_authenticated/signatures'
-      path: '/signatures'
-      fullPath: '/signatures'
-      preLoaderRoute: typeof AuthenticatedSignaturesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/settings': {
-      id: '/_authenticated/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/documents': {
-      id: '/_authenticated/documents'
-      path: '/documents'
-      fullPath: '/documents'
-      preLoaderRoute: typeof AuthenticatedDocumentsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/dashboard': {
-      id: '/_authenticated/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/certificates': {
-      id: '/_authenticated/certificates'
-      path: '/certificates'
-      fullPath: '/certificates'
-      preLoaderRoute: typeof AuthenticatedCertificatesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/audit': {
-      id: '/_authenticated/audit'
-      path: '/audit'
-      fullPath: '/audit'
-      preLoaderRoute: typeof AuthenticatedAuditRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/analytics': {
-      id: '/_authenticated/analytics'
-      path: '/analytics'
-      fullPath: '/analytics'
-      preLoaderRoute: typeof AuthenticatedAnalyticsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/editor/': {
-      id: '/_authenticated/editor/'
-      path: '/editor'
-      fullPath: '/editor/'
-      preLoaderRoute: typeof AuthenticatedEditorIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/organize/$docId': {
-      id: '/_authenticated/organize/$docId'
-      path: '/organize/$docId'
-      fullPath: '/organize/$docId'
-      preLoaderRoute: typeof AuthenticatedOrganizeDocIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/editor/$docId': {
-      id: '/_authenticated/editor/$docId'
-      path: '/editor/$docId'
-      fullPath: '/editor/$docId'
-      preLoaderRoute: typeof AuthenticatedEditorDocIdRouteImport
+    '/_authenticated/home': {
+      id: '/_authenticated/home'
+      path: '/home'
+      fullPath: '/home'
+      preLoaderRoute: typeof AuthenticatedHomeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
-  AuthenticatedAuditRoute: typeof AuthenticatedAuditRoute
-  AuthenticatedCertificatesRoute: typeof AuthenticatedCertificatesRoute
-  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
-  AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
-  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
-  AuthenticatedSignaturesRoute: typeof AuthenticatedSignaturesRoute
-  AuthenticatedTeamsRoute: typeof AuthenticatedTeamsRoute
-  AuthenticatedTemplatesRoute: typeof AuthenticatedTemplatesRoute
-  AuthenticatedEditorDocIdRoute: typeof AuthenticatedEditorDocIdRoute
-  AuthenticatedOrganizeDocIdRoute: typeof AuthenticatedOrganizeDocIdRoute
-  AuthenticatedEditorIndexRoute: typeof AuthenticatedEditorIndexRoute
+  AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
-  AuthenticatedAuditRoute: AuthenticatedAuditRoute,
-  AuthenticatedCertificatesRoute: AuthenticatedCertificatesRoute,
-  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
-  AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
-  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
-  AuthenticatedSignaturesRoute: AuthenticatedSignaturesRoute,
-  AuthenticatedTeamsRoute: AuthenticatedTeamsRoute,
-  AuthenticatedTemplatesRoute: AuthenticatedTemplatesRoute,
-  AuthenticatedEditorDocIdRoute: AuthenticatedEditorDocIdRoute,
-  AuthenticatedOrganizeDocIdRoute: AuthenticatedOrganizeDocIdRoute,
-  AuthenticatedEditorIndexRoute: AuthenticatedEditorIndexRoute,
+  AuthenticatedHomeRoute: AuthenticatedHomeRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -363,13 +117,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
