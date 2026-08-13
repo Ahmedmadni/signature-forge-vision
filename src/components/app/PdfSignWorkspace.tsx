@@ -27,10 +27,31 @@ interface Props {
 }
 
 export function PdfSignWorkspace({ file, signature, onRequestSignature, onDone }: Props) {
-  const src = useMemo(() => URL.createObjectURL(file), [file]);
-  useEffect(() => () => URL.revokeObjectURL(src), [src]);
+  const [bytes, setBytes] = useState<Uint8Array | null>(null);
+  const [readError, setReadError] = useState<string | null>(null);
 
-  const { pdf, loading, error } = usePdfDocument(src);
+  useEffect(() => {
+    let cancelled = false;
+    setBytes(null);
+    setReadError(null);
+    file
+      .arrayBuffer()
+      .then((buf) => {
+        if (!cancelled) setBytes(new Uint8Array(buf));
+      })
+      .catch(() => {
+        if (!cancelled) setReadError("تعذّر قراءة الملف");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [file]);
+
+  // نسخة مستقلة لـ pdf.js لأنه قد يستهلك المخزن المؤقت
+  const viewerBytes = useMemo(() => (bytes ? bytes.slice() : null), [bytes]);
+  const { pdf, loading: pdfLoading, error: pdfError } = usePdfDocument(viewerBytes);
+  const loading = !bytes && !readError ? true : pdfLoading;
+  const error = readError ?? pdfError;
   const invalidateUsage = useInvalidateUsage();
 
   const [page, setPage] = useState(1);
