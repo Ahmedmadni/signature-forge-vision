@@ -26,9 +26,18 @@ export function usePdfDocument(src: string | Uint8Array | null) {
     setError(null);
     setPdf(null);
 
+    if (!src) {
+      setLoading(false);
+      return;
+    }
+
     (async () => {
       try {
-        const task = (pdfjsLib as any).getDocument(src);
+        const task = (pdfjsLib as any).getDocument(
+          typeof src === "string"
+            ? { url: src, isEvalSupported: false }
+            : { data: src, isEvalSupported: false },
+        );
         doc = await task.promise;
         if (cancelled) return;
         const ratios: number[] = [];
