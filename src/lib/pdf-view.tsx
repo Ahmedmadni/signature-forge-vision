@@ -14,7 +14,7 @@ export interface LoadedPdf {
   ratios: number[];
 }
 
-export function usePdfDocument(src: string) {
+export function usePdfDocument(src: string | Uint8Array | null) {
   const [pdf, setPdf] = useState<LoadedPdf | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
