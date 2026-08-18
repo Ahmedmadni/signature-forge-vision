@@ -76,6 +76,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      { name: "theme-color", content: "#2a0d6b" },
+      { name: "mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-title", content: "وقِّع" },
       { title: "وقِّع — تطبيق توقيع ملفات PDF إلكترونيًا" },
       { name: "description", content: "تطبيق بسيط لتوقيع ملفات PDF: ارفع الملف، ضع توقيعك، واحفظ المستند الموقّع على جهازك خلال ثوانٍ." },
       { name: "author", content: "أحمد المدني" },
