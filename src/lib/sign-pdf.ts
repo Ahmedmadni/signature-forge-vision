@@ -8,22 +8,40 @@ export interface Placement {
   image: string; // data URL
 }
 
+function dataUrlToBytes(dataUrl: string): Uint8Array {
+  const comma = dataUrl.indexOf(",");
+  if (comma === -1) throw new Error("صورة التوقيع غير صالحة");
+  const meta = dataUrl.slice(0, comma);
+  const payload = dataUrl.slice(comma + 1);
+  const raw = meta.includes(";base64")
+    ? atob(payload)
+    : decodeURIComponent(payload);
+  const bytes = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+  return bytes;
+}
+
 /** يدمج التوقيعات داخل ملف PDF ويعيد البايتات الناتجة. */
 export async function buildSignedPdf(
-  source: ArrayBuffer,
+  source: ArrayBuffer | Uint8Array,
   placements: Placement[],
 ): Promise<Uint8Array> {
   const { PDFDocument } = await import("pdf-lib");
-  const pdfDoc = await PDFDocument.load(source);
+
+  let pdfDoc;
+  try {
+    pdfDoc = await PDFDocument.load(source, { ignoreEncryption: true });
+  } catch {
+    throw new Error("تعذّر قراءة ملف PDF (قد يكون تالفًا أو محميًا بكلمة مرور)");
+  }
   const pages = pdfDoc.getPages();
 
   const cache = new Map<string, unknown>();
   const embed = async (dataUrl: string) => {
     if (cache.has(dataUrl)) return cache.get(dataUrl) as never;
-    const bytes = await (await fetch(dataUrl)).arrayBuffer();
-    const img = dataUrl.startsWith("data:image/jpeg")
-      ? await pdfDoc.embedJpg(bytes)
-      : await pdfDoc.embedPng(bytes);
+    const bytes = dataUrlToBytes(dataUrl);
+    const isJpeg = /^data:image\/jpe?g/i.test(dataUrl);
+    const img = isJpeg ? await pdfDoc.embedJpg(bytes) : await pdfDoc.embedPng(bytes);
     cache.set(dataUrl, img);
     return img as never;
   };
