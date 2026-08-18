@@ -115,6 +115,41 @@ export function PdfSignWorkspace({ file, signature, onRequestSignature, onDone }
     [signature, width, height, page, onRequestSignature],
   );
 
+  /** نسخ توقيع الصفحة الحالية إلى كل صفحات المستند بنفس الموضع والحجم */
+  const applyToAllPages = useCallback(() => {
+    if (!pdf) return;
+    const source =
+      placements.find((p) => p.id === selected && p.page === page) ??
+      placements.filter((p) => p.page === page).slice(-1)[0];
+    if (!source) {
+      toast.error("ضع توقيعك على صفحة واحدة أولًا");
+      return;
+    }
+    const copies: Placement[] = [];
+    for (let n = 1; n <= pdf.numPages; n++) {
+      if (n === source.page) continue;
+      copies.push({ ...source, id: crypto.randomUUID(), page: n });
+    }
+    if (!copies.length) {
+      toast.info("المستند يحتوي على صفحة واحدة فقط");
+      return;
+    }
+    // إزالة أي نسخة سابقة نتجت عن نفس العملية لتفادي التكرار
+    setPlacements((list) => [
+      ...list.filter(
+        (p) =>
+          p.page === source.page ||
+          !(
+            Math.abs(p.xPct - source.xPct) < 0.001 &&
+            Math.abs(p.yPct - source.yPct) < 0.001 &&
+            p.image === source.image
+          ),
+      ),
+      ...copies,
+    ]);
+    toast.success(`تم تطبيق التوقيع على ${pdf.numPages} صفحات`);
+  }, [pdf, placements, selected, page]);
+
   const patch = (id: string, next: Partial<Placement>) =>
     setPlacements((list) => list.map((p) => (p.id === id ? { ...p, ...next } : p)));
 
