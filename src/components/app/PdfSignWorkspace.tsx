@@ -152,22 +152,33 @@ export function PdfSignWorkspace({ file, signature, onRequestSignature, onDone }
       toast.error("أضف توقيعك إلى المستند أولًا");
       return;
     }
+    if (!bytes) {
+      toast.error("لم يكتمل تحميل الملف بعد");
+      return;
+    }
     setSaving(true);
     try {
-      const quota = await consumePages(signedPagesCount);
-      invalidateUsage();
-      if (!quota.allowed) {
-        setPaywall({ used: quota.pages_used, limit: quota.daily_limit });
-        return;
+      const quota = await consumePages(signedPagesCount).catch((e) => {
+        console.error("[waqqi] quota error", e);
+        return null;
+      });
+      if (quota) {
+        invalidateUsage();
+        if (!quota.allowed) {
+          setPaywall({ used: quota.pages_used, limit: quota.daily_limit });
+          return;
+        }
       }
-      const bytes = await file.arrayBuffer();
-      const out = await buildSignedPdf(bytes, placements);
-      const blob = new Blob([out as BlobPart], { type: "application/pdf" });
+      const out = await buildSignedPdf(bytes.slice(), placements);
+      const copy = new Uint8Array(out.length);
+      copy.set(out);
+      const blob = new Blob([copy.buffer], { type: "application/pdf" });
       const name = file.name.replace(/\.[^.]+$/, "") + "-موقّع.pdf";
       await saveFile(blob, name);
       toast.success("تم حفظ المستند الموقّع");
       onDone();
     } catch (err) {
+      console.error("[waqqi] save error", err);
       toast.error(err instanceof Error ? err.message : "تعذّر حفظ المستند");
     } finally {
       setSaving(false);
