@@ -20,6 +20,7 @@ import { consumePages, useInvalidateUsage } from "@/lib/usage";
 import { Button } from "@/components/ui/button";
 import { Paywall } from "./Paywall";
 import { toast } from "sonner";
+import { playSfx, haptic } from "@/lib/sfx";
 
 interface Props {
   file: File;
@@ -111,6 +112,8 @@ export function PdfSignWorkspace({ file, signature, onRequestSignature, onDone }
           },
         ]);
         setSelected(id);
+        playSfx("place");
+        haptic();
       };
       img.src = signature;
     },
@@ -149,6 +152,7 @@ export function PdfSignWorkspace({ file, signature, onRequestSignature, onDone }
       ),
       ...copies,
     ]);
+    playSfx("place");
     toast.success(`تم تطبيق التوقيع على ${pdf.numPages} صفحات`);
   }, [pdf, placements, selected, page]);
 
@@ -212,10 +216,13 @@ export function PdfSignWorkspace({ file, signature, onRequestSignature, onDone }
       const blob = new Blob([copy.buffer], { type: "application/pdf" });
       const name = file.name.replace(/\.[^.]+$/, "") + "-موقّع.pdf";
       await saveFile(blob, name);
+      playSfx("success");
+      haptic(24);
       toast.success("تم حفظ المستند الموقّع");
       onDone();
     } catch (err) {
       console.error("[waqqi] save error", err);
+      playSfx("error");
       toast.error(err instanceof Error ? err.message : "تعذّر حفظ المستند");
     } finally {
       setSaving(false);
@@ -346,7 +353,7 @@ export function PdfSignWorkspace({ file, signature, onRequestSignature, onDone }
       <Button
         onClick={handleSave}
         disabled={saving}
-        className="w-full bg-gradient-brand text-primary-foreground shadow-glow"
+        className="press sheen w-full bg-gradient-brand text-primary-foreground shadow-glow"
         size="lg"
       >
         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
