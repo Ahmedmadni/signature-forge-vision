@@ -9,6 +9,7 @@ import {
   Minus,
   Plus,
   CopyPlus,
+  FileWarning,
 
 } from "lucide-react";
 import { usePdfDocument, PdfPageCanvas } from "@/lib/pdf-view";
