@@ -13,7 +13,8 @@
   --radius-3xl: calc(var(--radius) + 12px);
 
   --font-display: "Space Grotesk Variable", system-ui, sans-serif;
-  --font-sans: "Inter Variable", system-ui, sans-serif;
+  --font-sans: "DM Sans Variable", system-ui, sans-serif;
+
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
