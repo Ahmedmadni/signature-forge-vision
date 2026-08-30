@@ -9,6 +9,7 @@ import { SignatureCapture } from "@/components/app/SignatureCapture";
 import { useDefaultSignature, saveSignature, useInvalidateSignatures } from "@/lib/signatures";
 import { useUsage } from "@/lib/usage";
 import { toast } from "sonner";
+import { playSfx, haptic } from "@/lib/sfx";
 
 export const Route = createFileRoute("/_authenticated/home")({
   head: () => ({
@@ -71,6 +72,7 @@ function HomePage() {
               await saveSignature({ dataUrl, name: "توقيعي", type });
               invalidateSignatures();
               setSheet(false);
+              playSfx("success");
               toast.success("تم حفظ التوقيع");
             } catch (e) {
               toast.error(e instanceof Error ? e.message : "تعذّر حفظ التوقيع");
@@ -101,8 +103,12 @@ function HomePage() {
       />
 
       <button
-        onClick={() => inputRef.current?.click()}
-        className="flex w-full flex-col items-center gap-3 rounded-3xl border border-dashed border-primary/40 bg-gradient-to-b from-primary/10 to-transparent px-6 py-10 text-center transition-colors hover:border-primary"
+        onClick={() => {
+          playSfx("tap");
+          haptic();
+          inputRef.current?.click();
+        }}
+        className="press sheen group flex w-full flex-col items-center gap-3 rounded-3xl border border-dashed border-primary/40 bg-gradient-to-b from-primary/10 to-transparent px-6 py-10 text-center hover:border-primary hover:shadow-glow"
       >
         <div className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-brand shadow-glow">
           <FileUp className="h-6 w-6 text-primary-foreground" />
@@ -111,7 +117,7 @@ function HomePage() {
         <span className="text-xs text-muted-foreground">الملف يُعالج على جهازك ولا يُرفع إلى أي خادم</span>
       </button>
 
-      <section className="rounded-3xl border border-border bg-card/60 p-4">
+      <section className="rise-in rounded-3xl border border-border bg-card/60 p-4 shadow-elegant">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold">حصتك اليومية</h2>
           <span className="text-xs text-muted-foreground">
@@ -126,7 +132,7 @@ function HomePage() {
         </p>
       </section>
 
-      <section className="rounded-3xl border border-border bg-card/60 p-4">
+      <section className="rise-in rounded-3xl border border-border bg-card/60 p-4 shadow-elegant">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="grid h-10 w-10 place-items-center rounded-xl bg-muted">
@@ -154,7 +160,7 @@ function HomePage() {
           { icon: ShieldCheck, title: "خصوصية كاملة", text: "التوقيع يتم محليًا على جهازك" },
           { icon: Zap, title: "سريع", text: "وقّع مستندك في أقل من دقيقة" },
         ].map((f) => (
-          <div key={f.title} className="rounded-2xl border border-border bg-card/60 p-3">
+          <div key={f.title} className="press rounded-2xl border border-border bg-card/60 p-3 hover:border-primary/50">
             <f.icon className="h-5 w-5 text-primary" />
             <p className="mt-2 text-sm font-medium">{f.title}</p>
             <p className="text-xs text-muted-foreground">{f.text}</p>
@@ -172,7 +178,8 @@ function HomePage() {
             await saveSignature({ dataUrl, name: "توقيعي", type });
             invalidateSignatures();
             setSheet(false);
-            toast.success("تم حفظ التوقيع");
+            playSfx("success");
+              toast.success("تم حفظ التوقيع");
           } catch (e) {
             toast.error(e instanceof Error ? e.message : "تعذّر حفظ التوقيع");
           } finally {
