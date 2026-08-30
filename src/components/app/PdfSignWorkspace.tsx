@@ -8,7 +8,8 @@ import {
   PenLine,
   Minus,
   Plus,
-  FileWarning,
+  CopyPlus,
+
 } from "lucide-react";
 import { usePdfDocument, PdfPageCanvas } from "@/lib/pdf-view";
 import type { Placement } from "@/lib/sign-pdf";
@@ -263,9 +264,15 @@ export function PdfSignWorkspace({ file, signature, onRequestSignature, onDone }
             <ChevronLeft className="h-4 w-4" />
           </Button>
         </div>
-        <Button size="sm" variant="outline" onClick={() => addSignature()}>
-          <PenLine className="h-4 w-4" /> إضافة توقيع
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button size="sm" variant="ghost" onClick={applyToAllPages} disabled={pdf.numPages <= 1}>
+            <CopyPlus className="h-4 w-4" /> كل الصفحات
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => addSignature()}>
+            <PenLine className="h-4 w-4" /> إضافة توقيع
+          </Button>
+        </div>
+
       </div>
 
       <div
