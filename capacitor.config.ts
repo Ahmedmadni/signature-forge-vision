@@ -9,6 +9,9 @@ const config: CapacitorConfig = {
   },
   server: {
     androidScheme: "https",
+    // التطبيق يُحمَّل من النسخة المنشورة؛ غيّر الرابط عند استخدام نطاق مخصص
+    url: "https://signature-forge-vision.lovable.app/home",
+    cleartext: false,
   },
 };
 
