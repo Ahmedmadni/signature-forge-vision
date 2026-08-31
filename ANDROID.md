@@ -1,52 +1,93 @@
-# تصدير تطبيق «وقِّع» إلى APK
+# تطبيق «وقِّع» — مشروع أندرويد وتصدير APK
 
-مشروع أندرويد جاهز داخل مجلد `android/` (Capacitor).
+مشروع أندرويد (Capacitor) موجود فعليًا داخل مجلد `android/` ومزامَن مع آخر بناء للويب.
 
-- معرّف التطبيق: `com.ahmedelmadni.waqqi`
-- اسم التطبيق: وقِّع
-- minSdk 24 / targetSdk 36
+| العنصر | القيمة |
+| --- | --- |
+| معرّف التطبيق | `com.ahmedelmadni.waqqi` |
+| اسم التطبيق | وقِّع |
+| minSdk / targetSdk | 24 / 36 |
+| الإصدار | versionCode 1 — versionName 1.0 |
+| الأيقونة | مولّدة في `res/mipmap-*` بخلفية `#0F1424` |
 
-## 1) المتطلبات على جهازك
+---
+
+## 1) المتطلبات
 
 - Node.js 20+ و Bun
-- Android Studio (يتضمّن Android SDK + JDK 17)
+- Android Studio (Ladybug أو أحدث) مع:
+  - Android SDK Platform 36
+  - Android SDK Build-Tools 36
+  - JDK 17 (المدمج مع Android Studio)
 
-## 2) تحديث الملفات الأصلية بعد أي تعديل على الواجهة
+---
+
+## 2) تحضير المشروع بعد تنزيله من GitHub
 
 ```bash
 bun install
+bun run build          # بناء الويب
+bun run android:sync   # بناء + توليد الشاشة الأصلية + cap sync android
+```
+
+إن لم يكن مجلد `android/` موجودًا لديك:
+
+```bash
+bunx cap add android
 bun run android:sync
 ```
 
-هذا الأمر يبني الويب، يولّد شاشة التحميل الأصلية، ثم ينفّذ `cap sync android`.
+كرّر `bun run android:sync` بعد أي تعديل على واجهة التطبيق.
 
-> ملاحظة: التطبيق يفتح النسخة المنشورة من الموقع داخل WebView
-> (`server.url` في `capacitor.config.ts`). لتغيير الرابط أو استخدام نطاق مخصص
-> عدّل `capacitor.config.ts` ثم أعد المزامنة.
+---
 
-## 3) توليد APK
+## 3) الفتح في Android Studio
 
-من الطرفية:
+```bash
+bunx cap open android
+```
+
+أو افتح Android Studio ثم `Open` واختر مجلد `android/`.
+انتظر انتهاء Gradle Sync (أول مرة تستغرق عدة دقائق لتنزيل الاعتماديات).
+
+---
+
+## 4) تصدير APK
+
+### أ) من Android Studio
+
+1. `Build > Build Bundle(s) / APK(s) > Build APK(s)`
+2. عند الانتهاء اضغط **locate** لفتح الملف الناتج:
+   `android/app/build/outputs/apk/debug/app-debug.apk`
+
+### ب) من الطرفية
 
 ```bash
 cd android
-./gradlew assembleDebug        # نسخة تجريبية
-# الناتج: android/app/build/outputs/apk/debug/app-debug.apk
-
-./gradlew assembleRelease      # نسخة للنشر (تحتاج توقيع)
-# الناتج: android/app/build/outputs/apk/release/app-release.apk
+./gradlew assembleDebug     # نسخة تجريبية للتثبيت المباشر
+./gradlew assembleRelease   # نسخة للنشر (تحتاج توقيع)
+./gradlew bundleRelease     # ملف AAB لمتجر Google Play
 ```
 
-أو عبر Android Studio: `Build > Build Bundle(s)/APK(s) > Build APK(s)`.
+المخرجات:
 
-### توقيع نسخة الإصدار
+- `android/app/build/outputs/apk/debug/app-debug.apk`
+- `android/app/build/outputs/apk/release/app-release.apk`
+- `android/app/build/outputs/bundle/release/app-release.aab`
+
+### ج) توقيع نسخة الإصدار
+
+الطريقة الأسهل عبر Android Studio:
+`Build > Generate Signed App Bundle / APK` ثم اتبع المعالج لإنشاء keystore.
+
+أو يدويًا:
 
 ```bash
 keytool -genkey -v -keystore waqqi.keystore -alias waqqi \
   -keyalg RSA -keysize 2048 -validity 10000
 ```
 
-ثم أضف في `android/app/build.gradle` داخل `android { }`:
+ثم في `android/app/build.gradle` داخل كتلة `android { }`:
 
 ```gradle
 signingConfigs {
@@ -58,24 +99,52 @@ signingConfigs {
     }
 }
 buildTypes {
-    release { signingConfig signingConfigs.release }
+    release {
+        signingConfig signingConfigs.release
+        minifyEnabled false
+    }
 }
 ```
 
-## 4) إعلانات Google AdMob
+### د) التثبيت على جهاز
 
-تم تجهيز الملفات الأصلية مسبقًا:
+```bash
+adb install -r android/app/build/outputs/apk/debug/app-debug.apk
+```
 
-- `AndroidManifest.xml`: وسم `com.google.android.gms.ads.APPLICATION_ID`
+---
+
+## 5) رابط التطبيق داخل WebView
+
+التطبيق يفتح النسخة المنشورة من الموقع (`server.url` في `capacitor.config.ts`):
+
+```ts
+server: {
+  androidScheme: "https",
+  url: "https://signature-forge-vision.lovable.app/home",
+  cleartext: false,
+}
+```
+
+عند ربط نطاق مخصص، غيّر الرابط ثم نفّذ `bun run android:sync`.
+ملف `dist/client/index.html` المولَّد هو شاشة تحميل احتياطية تظهر قبل فتح الموقع.
+
+---
+
+## 6) إعلانات Google AdMob
+
+جاهز مسبقًا في الملفات الأصلية:
+
+- `AndroidManifest.xml`: `com.google.android.gms.ads.APPLICATION_ID`
   (حاليًا معرّف اختبار من Google) + صلاحيات `INTERNET`،
-  `ACCESS_NETWORK_STATE`، و`com.google.android.gms.permission.AD_ID`.
-- `android/app/build.gradle`: مكتبة `play-services-ads`.
+  `ACCESS_NETWORK_STATE`، `com.google.android.gms.permission.AD_ID`.
+- `android/app/build.gradle`: `com.google.android.gms:play-services-ads`.
 
 قبل النشر:
 
-1. أنشئ تطبيقًا في لوحة AdMob واحصل على معرّف التطبيق ووحدات الإعلانات.
-2. استبدل قيمة `ca-app-pub-...~...` في `AndroidManifest.xml` بمعرّفك الحقيقي.
-3. اضبط متغيرات البيئة للواجهة في `.env`:
+1. أنشئ تطبيقًا في لوحة AdMob واحصل على App ID ووحدات الإعلانات.
+2. استبدل `ca-app-pub-3940256099942544~3347511713` في `AndroidManifest.xml`.
+3. اضبط `.env`:
 
 ```
 VITE_ADS_ENABLED=true
@@ -85,11 +154,31 @@ VITE_ADMOB_INTERSTITIAL_ID=ca-app-pub-XXXXXXXX/XXXXXXXX
 VITE_ADMOB_REWARDED_ID=ca-app-pub-XXXXXXXX/XXXXXXXX
 ```
 
-4. لعرض إعلانات أصلية فعليًا ثبّت الإضافة:
+4. لعرض إعلانات أصلية:
 
 ```bash
-bun add @capacitor-community/admob && bunx cap sync android
+bun add @capacitor-community/admob
+bun run android:sync
 ```
 
-المساحات الإعلانية في الواجهة محجوزة عبر `src/components/app/AdSlot.tsx`
-ولن تُزيح المحتوى عند التفعيل.
+المساحات الإعلانية محجوزة في الواجهة عبر `src/components/app/AdSlot.tsx`.
+
+---
+
+## 7) قبل رفع التطبيق إلى Google Play
+
+- ارفع `versionCode` و`versionName` في `android/app/build.gradle`.
+- استخدم `bundleRelease` (AAB) بدل APK.
+- جهّز سياسة الخصوصية: `/privacy` داخل التطبيق.
+- عبّئ نموذج "أمان البيانات" مع ذكر استخدام معرّف الإعلانات (AD_ID).
+
+---
+
+## استكشاف الأخطاء
+
+| المشكلة | الحل |
+| --- | --- |
+| `SDK location not found` | أنشئ `android/local.properties` يحتوي `sdk.dir=/path/to/Android/sdk` |
+| فشل Gradle Sync | `File > Invalidate Caches / Restart` ثم أعد المزامنة |
+| شاشة بيضاء عند التشغيل | تحقق من الاتصال بالإنترنت ومن صحة `server.url` |
+| تغييرات الواجهة لا تظهر | نفّذ `bun run android:sync` ثم أعد البناء |
