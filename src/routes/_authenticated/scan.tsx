@@ -82,7 +82,7 @@ function ScanPage() {
   const [pages, setPages] = useState<Page[]>([]);
   const [saving, setSaving] = useState(false);
 
-  const processBlob = useCallback(async (blob: Blob) => {
+  const processBlob = useCallback(async (blob: Blob, cameraQuad?: Quad) => {
     setBusy("جارٍ اكتشاف حدود الصفحة وتحسينها…");
     try {
       const img = await loadImage(blob);
@@ -90,8 +90,8 @@ function ScanPage() {
       const height = "height" in img ? Number(img.height) : 0;
       if (!width || !height) throw new Error("invalid-image");
 
-      const detection = detectDocumentPrecise(img as CanvasImageSource, width, height);
-      const quad = detection?.quad ?? defaultQuad(width, height);
+      const detection = cameraQuad ? null : detectDocumentPrecise(img as CanvasImageSource, width, height);
+      const quad = cameraQuad ?? detection?.quad ?? defaultQuad(width, height);
       const filter: ScanFilter = "enhanced";
       const rotation = 0 as const;
       const canvas = renderPage(img as CanvasImageSource, width, height, quad, filter, rotation);
@@ -110,7 +110,7 @@ function ScanPage() {
       setPages((current) => [...current, page]);
       playSfx("success");
       haptic();
-      if (!detection) {
+      if (!cameraQuad && !detection) {
         toast.warning("لم يتم تأكيد الحواف الأربع بدقة. راجع حدود هذه الصفحة من زر التعديل.");
       }
       return page;
