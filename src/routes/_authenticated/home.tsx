@@ -1,6 +1,7 @@
-import { useRef, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
-import { FileUp, PenLine, ShieldCheck, Zap, ArrowRight } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { FileUp, PenLine, ShieldCheck, Zap, ArrowRight, ScanLine } from "lucide-react";
+import { takePendingFile } from "@/lib/pending-file";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
