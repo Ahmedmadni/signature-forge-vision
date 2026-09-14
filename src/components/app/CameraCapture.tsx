@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Camera, Check, Images, Loader2, ScanLine, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { playSfx, haptic } from "@/lib/sfx";
-import { analyzeDocumentFrame, quadDistance } from "@/lib/live-scan";
+import { analyzeDocumentFrame, blendQuads, quadDistance } from "@/lib/live-scan";
 import type { Quad } from "@/lib/scan";
 
 interface Props {
@@ -19,18 +19,14 @@ interface ViewBox {
   height: number;
 }
 
-/**
- * كاميرا ماسح ضوئي احترافية:
- * - كشف حي لحدود الورقة
- * - مؤشر ثقة وثبات
- * - التقاط تلقائي عند ثبات الورقة
- * - جلسة متعددة الصفحات
- */
+/** كاميرا ماسح ضوئي مع كشف حي، تثبيت للحواف، والتقاط تلقائي. */
 export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, onCapture }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const lastQuadRef = useRef<Quad | null>(null);
+  const lastRawQuadRef = useRef<Quad | null>(null);
+  const smoothedQuadRef = useRef<Quad | null>(null);
+  const latestQuadRef = useRef<Quad | null>(null);
   const capturedQuadRef = useRef<Quad | null>(null);
   const stableFramesRef = useRef(0);
   const lostFramesRef = useRef(0);
@@ -44,6 +40,7 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
   const [flash, setFlash] = useState(false);
   const [detectedQuad, setDetectedQuad] = useState<Quad | null>(null);
   const [confidence, setConfidence] = useState(0);
+  const [edgeScore, setEdgeScore] = useState(0);
   const [stableFrames, setStableFrames] = useState(0);
   const [viewBox, setViewBox] = useState<ViewBox>({ width: 0, height: 0 });
 
@@ -72,7 +69,7 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
           canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("capture-failed"))), "image/jpeg", 0.96);
         });
 
-        capturedQuadRef.current = detectedQuad;
+        capturedQuadRef.current = latestQuadRef.current;
         autoArmedRef.current = false;
         stableFramesRef.current = 0;
         setStableFrames(0);
@@ -82,7 +79,7 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
         setCapturing(false);
       }
     },
-    [detectedQuad, onCapture],
+    [onCapture],
   );
 
   useEffect(() => {
@@ -92,9 +89,12 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
     setReady(false);
     setDetectedQuad(null);
     setConfidence(0);
+    setEdgeScore(0);
     stableFramesRef.current = 0;
     lostFramesRef.current = 0;
-    lastQuadRef.current = null;
+    lastRawQuadRef.current = null;
+    smoothedQuadRef.current = null;
+    latestQuadRef.current = null;
     capturedQuadRef.current = null;
     autoArmedRef.current = true;
 
@@ -109,7 +109,7 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
       })
       .then((stream) => {
         if (cancelled) {
-          stream.getTracks().forEach((t) => t.stop());
+          stream.getTracks().forEach((track) => track.stop());
           return;
         }
         streamRef.current = stream;
@@ -128,19 +128,19 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
 
     return () => {
       cancelled = true;
-      streamRef.current?.getTracks().forEach((t) => t.stop());
+      streamRef.current?.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     };
   }, [open]);
 
   useEffect(() => {
-    const el = viewportRef.current;
-    if (!el) return;
-    const update = () => setViewBox({ width: el.clientWidth, height: el.clientHeight });
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
+    const element = viewportRef.current;
+    if (!element) return;
+    const update = () => setViewBox({ width: element.clientWidth, height: element.clientHeight });
+    const observer = new ResizeObserver(update);
+    observer.observe(element);
     update();
-    return () => ro.disconnect();
+    return () => observer.disconnect();
   }, [open]);
 
   useEffect(() => {
@@ -155,39 +155,53 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
       detectorBusyRef.current = true;
       try {
         const result = analyzeDocumentFrame(video, video.videoWidth, video.videoHeight);
-        setDetectedQuad(result.detected ? result.quad : null);
         setConfidence(result.confidence);
+        setEdgeScore(result.edgeScore);
 
-        if (!result.detected) {
+        if (!result.detected || !result.quad) {
           lostFramesRef.current += 1;
           stableFramesRef.current = 0;
           setStableFrames(0);
-          lastQuadRef.current = null;
-          if (lostFramesRef.current >= 2) autoArmedRef.current = true;
+          if (lostFramesRef.current >= 2) {
+            lastRawQuadRef.current = null;
+            smoothedQuadRef.current = null;
+            latestQuadRef.current = null;
+            setDetectedQuad(null);
+          }
+          if (lostFramesRef.current >= 3) autoArmedRef.current = true;
           return;
         }
 
         lostFramesRef.current = 0;
+        const rawQuad = result.quad;
+        const previousRaw = lastRawQuadRef.current;
+        const movement = previousRaw
+          ? quadDistance(rawQuad, previousRaw, video.videoWidth, video.videoHeight)
+          : 1;
+        lastRawQuadRef.current = rawQuad;
+
+        const previousSmooth = smoothedQuadRef.current;
+        const smoothQuad = previousSmooth ? blendQuads(previousSmooth, rawQuad, movement < 0.02 ? 0.28 : 0.48) : rawQuad;
+        smoothedQuadRef.current = smoothQuad;
+        latestQuadRef.current = smoothQuad;
+        setDetectedQuad(smoothQuad);
 
         if (!autoArmedRef.current && capturedQuadRef.current) {
-          const moved = quadDistance(result.quad, capturedQuadRef.current, video.videoWidth, video.videoHeight);
-          if (moved > 0.045) autoArmedRef.current = true;
+          const moved = quadDistance(rawQuad, capturedQuadRef.current, video.videoWidth, video.videoHeight);
+          if (moved > 0.055) autoArmedRef.current = true;
         }
 
-        const previous = lastQuadRef.current;
-        const movement = previous
-          ? quadDistance(result.quad, previous, video.videoWidth, video.videoHeight)
-          : 1;
-        lastQuadRef.current = result.quad;
-
-        if (result.stableEnough && movement < 0.012) {
+        const strongDetection = result.stableEnough && result.confidence >= 0.7 && result.edgeScore >= 0.52;
+        if (strongDetection && movement < 0.009) {
           stableFramesRef.current += 1;
+        } else if (movement < 0.016 && result.confidence >= 0.65) {
+          stableFramesRef.current = Math.max(0, stableFramesRef.current);
         } else {
           stableFramesRef.current = Math.max(0, stableFramesRef.current - 1);
         }
         setStableFrames(stableFramesRef.current);
 
-        if (autoArmedRef.current && stableFramesRef.current >= 4) {
+        if (autoArmedRef.current && stableFramesRef.current >= 5) {
           autoArmedRef.current = false;
           stableFramesRef.current = 0;
           setStableFrames(0);
@@ -196,7 +210,7 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
       } finally {
         detectorBusyRef.current = false;
       }
-    }, 320);
+    }, 300);
 
     return () => {
       disposed = true;
@@ -224,9 +238,9 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
     }
 
     return detectedQuad
-      .map((p) => {
-        const x = offsetX + (p.x / video.videoWidth) * drawWidth;
-        const y = offsetY + (p.y / video.videoHeight) * drawHeight;
+      .map((point) => {
+        const x = offsetX + (point.x / video.videoWidth) * drawWidth;
+        const y = offsetY + (point.y / video.videoHeight) * drawHeight;
         return `${x},${y}`;
       })
       .join(" ");
@@ -237,19 +251,19 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
   const status = !ready
     ? "جارٍ تشغيل الكاميرا…"
     : !detectedQuad
-      ? "وجّه الكاميرا إلى الورقة كاملة"
-      : confidence < 0.72
-        ? "قرّب الورقة واجعل الحواف واضحة"
-        : stableFrames < 3
-          ? "ثبّت الهاتف قليلًا…"
-          : "تم التعرّف على الورقة — سيتم الالتقاط تلقائيًا";
+      ? "ضع الورقة كاملة داخل الكاميرا وعلى خلفية واضحة"
+      : confidence < 0.62 || edgeScore < 0.45
+        ? "حرّك الهاتف قليلًا حتى تظهر الحواف الأربع بوضوح"
+        : stableFrames < 4
+          ? "تم اكتشاف الورقة — ثبّت الهاتف قليلًا"
+          : "الحدود ثابتة — سيتم الالتقاط تلقائيًا";
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background text-foreground">
       <div className="flex items-center justify-between border-b border-border bg-card/95 p-3 backdrop-blur">
         <div>
           <p className="text-sm font-semibold">المسح الذكي التلقائي</p>
-          <p className="text-xs text-muted-foreground">التقط الورقة تلقائيًا عند ظهور الحدود وثبات الصورة</p>
+          <p className="text-xs text-muted-foreground">يتم تحديد الحواف الأربع ثم تصحيح المنظور تلقائيًا</p>
         </div>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <X className="h-5 w-5" />
@@ -264,11 +278,15 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
             <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox={`0 0 ${viewBox.width} ${viewBox.height}`} preserveAspectRatio="none">
               <polygon
                 points={overlayPoints}
-                fill="hsl(var(--primary) / 0.10)"
+                fill="hsl(var(--primary) / 0.08)"
                 stroke="hsl(var(--primary))"
                 strokeWidth="3"
                 strokeLinejoin="round"
               />
+              {detectedQuad && overlayPoints.split(" ").map((point, index) => {
+                const [cx, cy] = point.split(",").map(Number);
+                return <circle key={index} cx={cx} cy={cy} r="6" fill="hsl(var(--background))" stroke="hsl(var(--primary))" strokeWidth="3" />;
+              })}
             </svg>
           )}
 
@@ -314,7 +332,7 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
 
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 border-t border-border bg-card/95 px-4 py-4 backdrop-blur">
         <div className="justify-self-start text-xs text-muted-foreground">
-          {detectedQuad ? "الحدود مكتشفة تلقائيًا" : "يمكن الالتقاط يدويًا أيضًا"}
+          {detectedQuad ? "الحواف محددة تلقائيًا" : "اترك مساحة صغيرة حول الورقة"}
         </div>
 
         <button
