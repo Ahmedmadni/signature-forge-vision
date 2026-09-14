@@ -20,12 +20,12 @@ import { ScanCropper } from "@/components/app/ScanCropper";
 import {
   buildScannedPdf,
   defaultQuad,
-  detectDocument,
   loadImage,
   renderPage,
   type Quad,
   type ScanFilter,
 } from "@/lib/scan";
+import { detectDocumentPrecise } from "@/lib/precise-document-detect";
 import { saveFile } from "@/lib/save-file";
 import { setPendingFile } from "@/lib/pending-file";
 import { toast } from "sonner";
@@ -90,7 +90,8 @@ function ScanPage() {
       const height = "height" in img ? Number(img.height) : 0;
       if (!width || !height) throw new Error("invalid-image");
 
-      const quad = detectDocument(img as CanvasImageSource, width, height);
+      const detection = detectDocumentPrecise(img as CanvasImageSource, width, height);
+      const quad = detection?.quad ?? defaultQuad(width, height);
       const filter: ScanFilter = "enhanced";
       const rotation = 0 as const;
       const canvas = renderPage(img as CanvasImageSource, width, height, quad, filter, rotation);
@@ -109,6 +110,9 @@ function ScanPage() {
       setPages((current) => [...current, page]);
       playSfx("success");
       haptic();
+      if (!detection) {
+        toast.warning("لم يتم تأكيد الحواف الأربع بدقة. راجع حدود هذه الصفحة من زر التعديل.");
+      }
       return page;
     } catch {
       toast.error("تعذّرت معالجة إحدى الصفحات");
@@ -134,7 +138,7 @@ function ScanPage() {
     if (!draft) return;
     setBusy("جارٍ تحديث الصفحة…");
     try {
-      await new Promise((r) => setTimeout(r, 20));
+      await new Promise((resolve) => setTimeout(resolve, 20));
       const canvas = renderPage(draft.image, draft.width, draft.height, draft.quad, draft.filter, draft.rotation);
       const next: Page = {
         id: draft.pageId ?? crypto.randomUUID(),
@@ -185,7 +189,7 @@ function ScanPage() {
   };
 
   const makePdf = async () => {
-    const bytes = await buildScannedPdf(pages.map((p) => p.canvas));
+    const bytes = await buildScannedPdf(pages.map((page) => page.canvas));
     const copy = new Uint8Array(bytes.length);
     copy.set(bytes);
     return new Blob([copy.buffer], { type: "application/pdf" });
@@ -200,9 +204,9 @@ function ScanPage() {
       playSfx("success");
       haptic(24);
       toast.success(`تم حفظ ${pages.length} صفحة في ملف PDF واحد`);
-    } catch (e) {
+    } catch (error) {
       playSfx("error");
-      toast.error(e instanceof Error ? e.message : "تعذّر حفظ الملف");
+      toast.error(error instanceof Error ? error.message : "تعذّر حفظ الملف");
     } finally {
       setSaving(false);
     }
@@ -242,25 +246,29 @@ function ScanPage() {
           imageWidth={draft.width}
           imageHeight={draft.height}
           quad={draft.quad}
-          onChange={(quad) => setDraft((d) => (d ? { ...d, quad } : d))}
+          onChange={(quad) => setDraft((current) => (current ? { ...current, quad } : current))}
         />
 
         <div className="flex flex-wrap items-center gap-2">
-          {filters.map((f) => (
+          {filters.map((filter) => (
             <Button
-              key={f.key}
+              key={filter.key}
               size="sm"
-              variant={draft.filter === f.key ? "default" : "outline"}
-              onClick={() => setDraft((d) => (d ? { ...d, filter: f.key } : d))}
+              variant={draft.filter === filter.key ? "default" : "outline"}
+              onClick={() => setDraft((current) => (current ? { ...current, filter: filter.key } : current))}
             >
-              {f.label}
+              {filter.label}
             </Button>
           ))}
           <Button
             size="sm"
             variant="outline"
             onClick={() =>
-              setDraft((d) => (d ? { ...d, rotation: (((d.rotation + 90) % 360) as 0 | 90 | 180 | 270) } : d))
+              setDraft((current) =>
+                current
+                  ? { ...current, rotation: (((current.rotation + 90) % 360) as 0 | 90 | 180 | 270) }
+                  : current,
+              )
             }
           >
             <RotateCw className="h-4 w-4" /> تدوير
@@ -268,14 +276,26 @@ function ScanPage() {
           <Button
             size="sm"
             variant="ghost"
-            onClick={() => setDraft((d) => (d ? { ...d, quad: detectDocument(d.image, d.width, d.height) } : d))}
+            onClick={() =>
+              setDraft((current) => {
+                if (!current) return current;
+                const detection = detectDocumentPrecise(current.image, current.width, current.height);
+                if (!detection) {
+                  toast.warning("لم يتم العثور على أربع حواف مؤكدة. يمكنك ضبط الزوايا يدويًا.");
+                  return current;
+                }
+                return { ...current, quad: detection.quad };
+              })
+            }
           >
             <Wand2 className="h-4 w-4" /> إعادة الكشف
           </Button>
           <Button
             size="sm"
             variant="ghost"
-            onClick={() => setDraft((d) => (d ? { ...d, quad: defaultQuad(d.width, d.height) } : d))}
+            onClick={() =>
+              setDraft((current) => (current ? { ...current, quad: defaultQuad(current.width, current.height) } : current))
+            }
           >
             الصورة كاملة
           </Button>
@@ -309,9 +329,9 @@ function ScanPage() {
         accept="image/*"
         multiple
         className="hidden"
-        onChange={async (e) => {
-          const files = Array.from(e.target.files ?? []);
-          e.currentTarget.value = "";
+        onChange={async (event) => {
+          const files = Array.from(event.target.files ?? []);
+          event.currentTarget.value = "";
           for (const file of files) {
             await processBlob(file);
           }
