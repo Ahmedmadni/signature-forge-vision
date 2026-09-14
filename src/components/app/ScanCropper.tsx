@@ -9,7 +9,7 @@ interface Props {
   onChange: (q: Quad) => void;
 }
 
-/** محرّر حدود الورقة: أربع مقابض قابلة للسحب فوق معاينة الصورة، دون تعتيم أسود */
+/** محرّر حدود الورقة: معاينة فاتحة وواضحة مع أربع زوايا قابلة للسحب. */
 export function ScanCropper({ image, imageWidth, imageHeight, quad, onChange }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -20,75 +20,136 @@ export function ScanCropper({ image, imageWidth, imageHeight, quad, onChange }: 
 
   useEffect(() => {
     const el = wrapRef.current;
-    if (!el) return;
+    if (!el || !Number.isFinite(ratio) || ratio <= 0) return;
+
     const update = () => {
-      const w = el.clientWidth;
-      setBox({ w, h: w / ratio });
+      const availableWidth = Math.max(1, el.clientWidth);
+      const maxHeight = Math.min(window.innerHeight * 0.62, 760);
+      let w = availableWidth;
+      let h = w / ratio;
+
+      if (h > maxHeight) {
+        h = maxHeight;
+        w = h * ratio;
+      }
+
+      setBox({ w, h });
     };
+
     const ro = new ResizeObserver(update);
     ro.observe(el);
+    window.addEventListener("resize", update);
     update();
-    return () => ro.disconnect();
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", update);
+    };
   }, [ratio]);
 
   useEffect(() => {
-    const c = canvasRef.current;
-    if (!c) return;
+    const canvas = canvasRef.current;
+    if (!canvas || !box.w || !box.h) return;
+
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    c.width = Math.round(box.w * dpr);
-    c.height = Math.round(box.h * dpr);
-    const ctx = c.getContext("2d")!;
+    canvas.width = Math.max(1, Math.round(box.w * dpr));
+    canvas.height = Math.max(1, Math.round(box.h * dpr));
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, box.w, box.h);
+
+    // لا نترك أي شفافية تكشف خلفية الوضع الداكن.
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, box.w, box.h);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
     ctx.drawImage(image, 0, 0, box.w, box.h);
   }, [image, box]);
 
-  const toView = (p: Pt) => ({ x: (p.x / imageWidth) * box.w, y: (p.y / imageHeight) * box.h });
-  const pts = useMemo(() => quad.map(toView), [quad, box, imageWidth, imageHeight]);
+  const offsetX = Math.max(0, (Math.max(box.w, wrapRef.current?.clientWidth ?? box.w) - box.w) / 2);
 
-  const move = (e: React.PointerEvent) => {
-    const i = dragRef.current;
+  const toView = (point: Pt) => ({
+    x: offsetX + (point.x / imageWidth) * box.w,
+    y: (point.y / imageHeight) * box.h,
+  });
+
+  const pts = useMemo(
+    () => quad.map(toView),
+    // offsetX is derived from the current measured container and box.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [quad, box, imageWidth, imageHeight, offsetX],
+  );
+
+  const move = (event: React.PointerEvent) => {
+    const index = dragRef.current;
     const rect = wrapRef.current?.getBoundingClientRect();
-    if (i === null || !rect) return;
-    const x = Math.min(Math.max(e.clientX - rect.left, 0), box.w);
-    const y = Math.min(Math.max(e.clientY - rect.top, 0), box.h);
+    if (index === null || !rect) return;
+
+    const localX = event.clientX - rect.left - offsetX;
+    const localY = event.clientY - rect.top;
+    const x = Math.min(Math.max(localX, 0), box.w);
+    const y = Math.min(Math.max(localY, 0), box.h);
+
     const next = [...quad] as Quad;
-    next[i] = { x: (x / box.w) * imageWidth, y: (y / box.h) * imageHeight };
+    next[index] = {
+      x: (x / box.w) * imageWidth,
+      y: (y / box.h) * imageHeight,
+    };
     onChange(next);
   };
 
-  const path = pts.map((p) => `${p.x},${p.y}`).join(" ");
+  const path = pts.map((point) => `${point.x},${point.y}`).join(" ");
 
   return (
     <div
       ref={wrapRef}
-      className="relative w-full touch-none overflow-hidden rounded-2xl border border-border bg-card shadow-elegant"
+      className="relative flex w-full touch-none justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg"
       style={{ height: box.h }}
       onPointerMove={move}
       onPointerUp={() => (dragRef.current = null)}
+      onPointerCancel={() => (dragRef.current = null)}
       onPointerLeave={() => (dragRef.current = null)}
     >
-      <canvas ref={canvasRef} style={{ width: box.w, height: box.h }} className="block" />
-      <svg className="pointer-events-none absolute inset-0" width={box.w} height={box.h}>
+      <canvas
+        ref={canvasRef}
+        width={Math.max(1, Math.round(box.w))}
+        height={Math.max(1, Math.round(box.h))}
+        style={{ width: box.w, height: box.h }}
+        className="block bg-white"
+      />
+
+      <svg
+        className="pointer-events-none absolute inset-0 h-full w-full"
+        width="100%"
+        height="100%"
+      >
         <polygon
           points={path}
-          fill="hsl(var(--primary) / 0.08)"
-          stroke="hsl(var(--primary))"
-          strokeWidth={2}
+          fill="rgb(59 130 246 / 0.05)"
+          stroke="rgb(37 99 235)"
+          strokeWidth={3}
           strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
         />
       </svg>
-      {pts.map((p, i) => (
+
+      {pts.map((point, index) => (
         <button
-          key={i}
-          aria-label={`زاوية ${i + 1}`}
-          onPointerDown={(e) => {
-            e.preventDefault();
-            dragRef.current = i;
+          key={index}
+          aria-label={`زاوية ${index + 1}`}
+          onPointerDown={(event) => {
+            event.preventDefault();
+            event.currentTarget.setPointerCapture?.(event.pointerId);
+            dragRef.current = index;
           }}
-          className="absolute h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-primary bg-background shadow-lg"
-          style={{ left: p.x, top: p.y }}
-        />
+          className="absolute h-9 w-9 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-blue-600 bg-white shadow-xl outline-none ring-2 ring-white/80"
+          style={{ left: point.x, top: point.y }}
+        >
+          <span className="absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-600" />
+        </button>
       ))}
     </div>
   );
