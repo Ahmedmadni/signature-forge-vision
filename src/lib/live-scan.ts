@@ -1,4 +1,4 @@
-import { detectDocumentPrecise } from "@/lib/precise-document-detect";
+import { detectDocumentRefined } from "@/lib/document-refine";
 import type { Pt, Quad } from "@/lib/scan";
 
 export interface LiveDetectionResult {
@@ -31,7 +31,7 @@ export function analyzeDocumentFrame(
   width: number,
   height: number,
 ): LiveDetectionResult {
-  const detection = detectDocumentPrecise(source, width, height);
+  const detection = detectDocumentRefined(source, width, height);
   if (!detection) {
     return {
       quad: null,
@@ -42,12 +42,13 @@ export function analyzeDocumentFrame(
     };
   }
 
-  const detected = detection.confidence >= 0.5 && detection.edgeScore >= 0.4;
+  // لا نظهر رباعي ضعيف لمجرد وجود بعض الخطوط في الخلفية.
+  const detected = detection.confidence >= 0.54 && detection.edgeScore >= 0.42;
   return {
     quad: detection.quad,
     confidence: detection.confidence,
     edgeScore: detection.edgeScore,
     detected,
-    stableEnough: detected && detection.confidence >= 0.68 && detection.edgeScore >= 0.5,
+    stableEnough: detected && detection.confidence >= 0.7 && detection.edgeScore >= 0.52,
   };
 }
