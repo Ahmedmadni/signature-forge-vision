@@ -9,7 +9,7 @@ interface Props {
   onChange: (q: Quad) => void;
 }
 
-/** محرّر حدود الورقة: أربع مقابض قابلة للسحب فوق معاينة الصورة */
+/** محرّر حدود الورقة: أربع مقابض قابلة للسحب فوق معاينة الصورة، دون تعتيم أسود */
 export function ScanCropper({ image, imageWidth, imageHeight, quad, onChange }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -62,7 +62,7 @@ export function ScanCropper({ image, imageWidth, imageHeight, quad, onChange }: 
   return (
     <div
       ref={wrapRef}
-      className="relative w-full touch-none overflow-hidden rounded-2xl bg-black"
+      className="relative w-full touch-none overflow-hidden rounded-2xl border border-border bg-card shadow-elegant"
       style={{ height: box.h }}
       onPointerMove={move}
       onPointerUp={() => (dragRef.current = null)}
@@ -72,9 +72,10 @@ export function ScanCropper({ image, imageWidth, imageHeight, quad, onChange }: 
       <svg className="pointer-events-none absolute inset-0" width={box.w} height={box.h}>
         <polygon
           points={path}
-          fill="hsl(var(--primary) / 0.12)"
+          fill="hsl(var(--primary) / 0.08)"
           stroke="hsl(var(--primary))"
           strokeWidth={2}
+          strokeLinejoin="round"
         />
       </svg>
       {pts.map((p, i) => (
@@ -85,7 +86,7 @@ export function ScanCropper({ image, imageWidth, imageHeight, quad, onChange }: 
             e.preventDefault();
             dragRef.current = i;
           }}
-          className="absolute h-9 w-9 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-primary bg-background/70 shadow-glow backdrop-blur"
+          className="absolute h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-primary bg-background shadow-lg"
           style={{ left: p.x, top: p.y }}
         />
       ))}
