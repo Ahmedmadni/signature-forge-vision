@@ -11,7 +11,7 @@ interface Props {
   lastPreview?: string | null;
   onClose: () => void;
   onDone: () => void;
-  onCapture: (blob: Blob) => Promise<void> | void;
+  onCapture: (blob: Blob, detectedQuad?: Quad) => Promise<void> | void;
 }
 
 interface ViewBox {
@@ -69,11 +69,12 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
           canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("capture-failed"))), "image/jpeg", 0.96);
         });
 
-        capturedQuadRef.current = latestQuadRef.current;
+        const captureQuad = latestQuadRef.current ?? undefined;
+        capturedQuadRef.current = captureQuad ?? null;
         autoArmedRef.current = false;
         stableFramesRef.current = 0;
         setStableFrames(0);
-        await onCapture(blob);
+        await onCapture(blob, captureQuad);
       } finally {
         capturingRef.current = false;
         setCapturing(false);
@@ -283,7 +284,7 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
                 strokeWidth="3"
                 strokeLinejoin="round"
               />
-              {detectedQuad && overlayPoints.split(" ").map((point, index) => {
+              {overlayPoints.split(" ").map((point, index) => {
                 const [cx, cy] = point.split(",").map(Number);
                 return <circle key={index} cx={cx} cy={cy} r="6" fill="hsl(var(--background))" stroke="hsl(var(--primary))" strokeWidth="3" />;
               })}
