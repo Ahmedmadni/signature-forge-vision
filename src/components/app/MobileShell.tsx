@@ -1,12 +1,13 @@
 import type { ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, PenLine, User, Signature } from "lucide-react";
+import { Home, PenLine, User, Signature, ScanLine } from "lucide-react";
 import { DeveloperFooter } from "./DeveloperFooter";
 import { SoundToggle } from "./SoundToggle";
 import { haptic, playSfx } from "@/lib/sfx";
 
 const nav = [
   { to: "/home", label: "الرئيسية", icon: Home },
+  { to: "/scan", label: "الماسح", icon: ScanLine },
   { to: "/signature", label: "توقيعي", icon: PenLine },
   { to: "/account", label: "حسابي", icon: User },
 ] as const;
@@ -42,7 +43,7 @@ export function MobileShell({ children }: { children: ReactNode }) {
       </div>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/95 backdrop-blur-xl">
-        <div className="mx-auto grid w-full max-w-2xl grid-cols-3">
+        <div className="mx-auto grid w-full max-w-2xl grid-cols-4">
           {nav.map((item) => {
             const active = path.startsWith(item.to);
             return (
