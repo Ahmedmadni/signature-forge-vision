@@ -1,6 +1,7 @@
-import { useRef, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
-import { FileUp, PenLine, ShieldCheck, Zap, ArrowRight } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { FileUp, PenLine, ShieldCheck, Zap, ArrowRight, ScanLine } from "lucide-react";
+import { takePendingFile } from "@/lib/pending-file";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
@@ -33,6 +34,12 @@ function HomePage() {
   const { signature } = useDefaultSignature();
   const invalidateSignatures = useInvalidateSignatures();
   const usage = useUsage();
+
+  useEffect(() => {
+    const pending = takePendingFile();
+    if (pending) setFile(pending);
+  }, []);
+
 
   const used = usage.data?.pages_used ?? 0;
   const limit = usage.data?.daily_limit ?? 3;
@@ -116,6 +123,25 @@ function HomePage() {
         <span className="font-display text-lg font-semibold">اختر ملف PDF</span>
         <span className="text-xs text-muted-foreground">الملف يُعالج على جهازك ولا يُرفع إلى أي خادم</span>
       </button>
+
+      <Link
+        to="/scan"
+        onClick={() => {
+          playSfx("tap");
+          haptic();
+        }}
+        className="press flex items-center gap-3 rounded-2xl border border-border bg-card/60 p-3 hover:border-primary/50"
+      >
+        <div className="grid h-10 w-10 place-items-center rounded-xl bg-muted">
+          <ScanLine className="h-5 w-5 text-primary" />
+        </div>
+        <div className="flex-1">
+          <p className="text-sm font-semibold">مسح ورقة بالكاميرا</p>
+          <p className="text-xs text-muted-foreground">كشف تلقائي للحواف وتحسين الجودة ثم حفظ PDF</p>
+        </div>
+        <ArrowRight className="h-4 w-4 text-muted-foreground" />
+      </Link>
+
 
       <section className="rise-in rounded-3xl border border-border bg-card/60 p-4 shadow-elegant">
         <div className="flex items-center justify-between">

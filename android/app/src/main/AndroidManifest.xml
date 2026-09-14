@@ -50,4 +50,7 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- مطلوب لإعلانات AdMob على أندرويد 13+ -->
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
+    <!-- مطلوب للماسح الضوئي (التصوير بالكاميرا) -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 </manifest>
