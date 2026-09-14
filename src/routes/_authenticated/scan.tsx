@@ -11,6 +11,8 @@ import {
   Check,
   ScanLine,
   Wand2,
+  SlidersHorizontal,
+  GripVertical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CameraCapture } from "@/components/app/CameraCapture";
@@ -36,21 +38,15 @@ export const Route = createFileRoute("/_authenticated/scan")({
       { title: "الماسح الضوئي — وقِّع" },
       {
         name: "description",
-        content: "صوّر أوراقك بالكاميرا، والتطبيق يحدّد حدود الورقة تلقائيًا ويحسّن الجودة ويحفظها PDF عالي الدقة.",
+        content: "صوّر عدة صفحات، وسيتم اكتشاف الحدود وقص كل صفحة تلقائيًا ثم حفظها في ملف PDF واحد عالي الدقة.",
       },
-      { property: "og:title", content: "الماسح الضوئي — وقِّع" },
-      {
-        property: "og:description",
-        content: "حوّل أي ورقة إلى ملف PDF واضح بكاميرا هاتفك، مع كشف تلقائي للحواف وتحسين للجودة.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: ScanPage,
 });
 
 interface Draft {
+  pageId?: string;
   image: CanvasImageSource;
   width: number;
   height: number;
@@ -63,6 +59,12 @@ interface Page {
   id: string;
   canvas: HTMLCanvasElement;
   preview: string;
+  source: CanvasImageSource;
+  sourceWidth: number;
+  sourceHeight: number;
+  quad: Quad;
+  filter: ScanFilter;
+  rotation: 0 | 90 | 180 | 270;
 }
 
 const filters: { key: ScanFilter; label: string }[] = [
@@ -80,37 +82,106 @@ function ScanPage() {
   const [pages, setPages] = useState<Page[]>([]);
   const [saving, setSaving] = useState(false);
 
-  const ingest = useCallback(async (blob: Blob) => {
-    setBusy("جارٍ تحليل الصورة…");
+  const processBlob = useCallback(async (blob: Blob) => {
+    setBusy("جارٍ اكتشاف حدود الصفحة وتحسينها…");
     try {
       const img = await loadImage(blob);
-      const width = "width" in img ? (img.width as number) : 0;
-      const height = "height" in img ? (img.height as number) : 0;
+      const width = "width" in img ? Number(img.width) : 0;
+      const height = "height" in img ? Number(img.height) : 0;
+      if (!width || !height) throw new Error("invalid-image");
+
       const quad = detectDocument(img as CanvasImageSource, width, height);
-      setDraft({ image: img as CanvasImageSource, width, height, quad, filter: "enhanced", rotation: 0 });
-      playSfx("place");
+      const filter: ScanFilter = "enhanced";
+      const rotation = 0 as const;
+      const canvas = renderPage(img as CanvasImageSource, width, height, quad, filter, rotation);
+      const page: Page = {
+        id: crypto.randomUUID(),
+        canvas,
+        preview: canvas.toDataURL("image/jpeg", 0.72),
+        source: img as CanvasImageSource,
+        sourceWidth: width,
+        sourceHeight: height,
+        quad,
+        filter,
+        rotation,
+      };
+
+      setPages((current) => [...current, page]);
+      playSfx("success");
+      haptic();
+      return page;
     } catch {
-      toast.error("تعذّرت قراءة الصورة");
+      toast.error("تعذّرت معالجة إحدى الصفحات");
+      return null;
     } finally {
       setBusy(null);
     }
   }, []);
 
-  const confirmDraft = async () => {
+  const openEditor = (page: Page) => {
+    setDraft({
+      pageId: page.id,
+      image: page.source,
+      width: page.sourceWidth,
+      height: page.sourceHeight,
+      quad: page.quad,
+      filter: page.filter,
+      rotation: page.rotation,
+    });
+  };
+
+  const applyDraft = async () => {
     if (!draft) return;
-    setBusy("جارٍ تحسين الصفحة…");
+    setBusy("جارٍ تحديث الصفحة…");
     try {
-      await new Promise((r) => setTimeout(r, 30));
+      await new Promise((r) => setTimeout(r, 20));
       const canvas = renderPage(draft.image, draft.width, draft.height, draft.quad, draft.filter, draft.rotation);
-      setPages((p) => [...p, { id: crypto.randomUUID(), canvas, preview: canvas.toDataURL("image/jpeg", 0.7) }]);
+      const next: Page = {
+        id: draft.pageId ?? crypto.randomUUID(),
+        canvas,
+        preview: canvas.toDataURL("image/jpeg", 0.72),
+        source: draft.image,
+        sourceWidth: draft.width,
+        sourceHeight: draft.height,
+        quad: draft.quad,
+        filter: draft.filter,
+        rotation: draft.rotation,
+      };
+
+      setPages((current) => {
+        if (!draft.pageId) return [...current, next];
+        return current.map((page) => (page.id === draft.pageId ? next : page));
+      });
       setDraft(null);
       playSfx("success");
       haptic();
     } catch {
-      toast.error("تعذّرت معالجة الصفحة");
+      toast.error("تعذّر تحديث الصفحة");
     } finally {
       setBusy(null);
     }
+  };
+
+  const rotatePage = (page: Page) => {
+    const rotation = (((page.rotation + 90) % 360) as 0 | 90 | 180 | 270);
+    const canvas = renderPage(page.source, page.sourceWidth, page.sourceHeight, page.quad, page.filter, rotation);
+    setPages((current) =>
+      current.map((item) =>
+        item.id === page.id
+          ? { ...item, rotation, canvas, preview: canvas.toDataURL("image/jpeg", 0.72) }
+          : item,
+      ),
+    );
+  };
+
+  const movePage = (index: number, direction: -1 | 1) => {
+    setPages((current) => {
+      const target = index + direction;
+      if (target < 0 || target >= current.length) return current;
+      const next = [...current];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
   };
 
   const makePdf = async () => {
@@ -128,7 +199,7 @@ function ScanPage() {
       await saveFile(blob, `مسح-${new Date().toISOString().slice(0, 10)}.pdf`);
       playSfx("success");
       haptic(24);
-      toast.success("تم حفظ الملف بصيغة PDF");
+      toast.success(`تم حفظ ${pages.length} صفحة في ملف PDF واحد`);
     } catch (e) {
       playSfx("error");
       toast.error(e instanceof Error ? e.message : "تعذّر حفظ الملف");
@@ -153,12 +224,14 @@ function ScanPage() {
     }
   };
 
-  /* ---------------- محرّر الصفحة الملتقطة ---------------- */
   if (draft) {
     return (
       <div className="space-y-4">
         <header className="flex items-center justify-between">
-          <h1 className="font-display text-lg font-semibold">اضبط حدود الورقة</h1>
+          <div>
+            <h1 className="font-display text-lg font-semibold">تعديل حدود الصفحة</h1>
+            <p className="text-xs text-muted-foreground">الحدود مكتشفة تلقائيًا. حرّك الزوايا فقط إذا احتجت لتصحيحها.</p>
+          </div>
           <Button variant="ghost" size="sm" onClick={() => setDraft(null)}>
             إلغاء
           </Button>
@@ -195,13 +268,9 @@ function ScanPage() {
           <Button
             size="sm"
             variant="ghost"
-            onClick={() =>
-              setDraft((d) =>
-                d ? { ...d, quad: detectDocument(d.image, d.width, d.height) } : d,
-              )
-            }
+            onClick={() => setDraft((d) => (d ? { ...d, quad: detectDocument(d.image, d.width, d.height) } : d))}
           >
-            <Wand2 className="h-4 w-4" /> كشف تلقائي
+            <Wand2 className="h-4 w-4" /> إعادة الكشف
           </Button>
           <Button
             size="sm"
@@ -213,25 +282,24 @@ function ScanPage() {
         </div>
 
         <Button
-          onClick={confirmDraft}
+          onClick={applyDraft}
           disabled={busy !== null}
           size="lg"
           className="press sheen w-full bg-gradient-brand text-primary-foreground shadow-glow"
         >
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-          {busy ?? "إضافة الصفحة"}
+          {busy ?? "حفظ التعديل"}
         </Button>
       </div>
     );
   }
 
-  /* ---------------- الشاشة الرئيسية للماسح ---------------- */
   return (
     <div className="space-y-5">
       <header>
         <h1 className="font-display text-2xl font-semibold tracking-tight">الماسح الضوئي</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          صوّر ورقتك، ونحدّد حدودها تلقائيًا ونحسّن وضوحها ثم نحفظها PDF عالي الدقة.
+          امسح عدة صفحات في جلسة واحدة. يتم اكتشاف الحواف وتصحيح المنظور وتحسين الجودة تلقائيًا.
         </p>
       </header>
 
@@ -244,7 +312,9 @@ function ScanPage() {
         onChange={async (e) => {
           const files = Array.from(e.target.files ?? []);
           e.currentTarget.value = "";
-          for (const f of files) await ingest(f);
+          for (const file of files) {
+            await processBlob(file);
+          }
         }}
       />
 
@@ -260,7 +330,8 @@ function ScanPage() {
           <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-brand shadow-glow">
             <Camera className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="font-display text-sm font-semibold">تصوير بالكاميرا</span>
+          <span className="font-display text-sm font-semibold">مسح بالكاميرا</span>
+          <span className="text-[11px] text-muted-foreground">عدة صفحات في نفس الجلسة</span>
         </button>
 
         <button
@@ -273,12 +344,13 @@ function ScanPage() {
           <div className="grid h-12 w-12 place-items-center rounded-2xl bg-muted">
             <ImagePlus className="h-5 w-5 text-primary" />
           </div>
-          <span className="font-display text-sm font-semibold">من الصور</span>
+          <span className="font-display text-sm font-semibold">استيراد صور</span>
+          <span className="text-[11px] text-muted-foreground">اختر عدة صور دفعة واحدة</span>
         </button>
       </div>
 
       {busy && (
-        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+        <div className="flex items-center justify-center gap-2 rounded-2xl border border-border bg-card/60 p-3 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin text-primary" /> {busy}
         </div>
       )}
@@ -288,31 +360,54 @@ function ScanPage() {
           <ScanLine className="mx-auto h-8 w-8 text-primary" />
           <p className="mt-2 text-sm font-medium">لا توجد صفحات بعد</p>
           <p className="text-xs text-muted-foreground">
-            التقط أول صفحة للبدء — كل المعالجة تتم على جهازك دون رفع أي ملف.
+            التقط أول صفحة أو اختر عدة صور. لن تظهر شاشة تحديد إجبارية بعد كل صفحة.
           </p>
         </div>
       ) : (
         <section className="space-y-3">
-          <h2 className="text-sm font-semibold">الصفحات ({pages.length})</h2>
-          <div className="grid grid-cols-3 gap-3">
-            {pages.map((p, i) => (
-              <div key={p.id} className="relative overflow-hidden rounded-2xl border border-border bg-card">
-                <img src={p.preview} alt={`صفحة ${i + 1}`} className="aspect-[3/4] w-full object-cover" />
-                <span className="absolute start-1 top-1 rounded-md bg-background/80 px-1.5 text-[11px]">
-                  {i + 1}
-                </span>
-                <button
-                  aria-label="حذف الصفحة"
-                  onClick={() => setPages((l) => l.filter((x) => x.id !== p.id))}
-                  className="absolute end-1 top-1 grid h-7 w-7 place-items-center rounded-md bg-background/80"
-                >
-                  <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                </button>
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold">الصفحات ({pages.length})</h2>
+            <Button variant="outline" size="sm" onClick={() => setCamera(true)}>
+              <Camera className="h-4 w-4" /> إضافة صفحات
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {pages.map((page, index) => (
+              <div key={page.id} className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+                <div className="relative">
+                  <img src={page.preview} alt={`صفحة ${index + 1}`} className="aspect-[3/4] w-full bg-muted/20 object-contain" />
+                  <span className="absolute start-2 top-2 rounded-full bg-background/90 px-2 py-1 text-[11px] shadow-sm">
+                    {index + 1}
+                  </span>
+                  <button
+                    aria-label="حذف الصفحة"
+                    onClick={() => setPages((list) => list.filter((item) => item.id !== page.id))}
+                    className="absolute end-2 top-2 grid h-8 w-8 place-items-center rounded-full bg-background/90 shadow-sm"
+                  >
+                    <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-4 border-t border-border">
+                  <button className="grid place-items-center p-2 hover:bg-muted" onClick={() => movePage(index, -1)} aria-label="تحريك للأمام">
+                    <GripVertical className="h-4 w-4 rotate-90" />
+                  </button>
+                  <button className="grid place-items-center p-2 hover:bg-muted" onClick={() => rotatePage(page)} aria-label="تدوير">
+                    <RotateCw className="h-4 w-4" />
+                  </button>
+                  <button className="grid place-items-center p-2 hover:bg-muted" onClick={() => openEditor(page)} aria-label="تعديل الحدود">
+                    <SlidersHorizontal className="h-4 w-4" />
+                  </button>
+                  <button className="grid place-items-center p-2 hover:bg-muted" onClick={() => movePage(index, 1)} aria-label="تحريك للخلف">
+                    <GripVertical className="h-4 w-4 rotate-90" />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
 
-          <div className="grid gap-2">
+          <div className="grid gap-2 pt-2">
             <Button
               onClick={savePdf}
               disabled={saving}
@@ -320,7 +415,7 @@ function ScanPage() {
               className="press sheen w-full bg-gradient-brand text-primary-foreground shadow-glow"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-              حفظ بصيغة PDF
+              حفظ {pages.length} صفحة بصيغة PDF
             </Button>
             <Button onClick={signNow} disabled={saving} variant="outline" size="lg" className="w-full">
               <PenLine className="h-4 w-4" /> توقيع المستند الآن
@@ -331,11 +426,11 @@ function ScanPage() {
 
       <CameraCapture
         open={camera}
+        pageCount={pages.length}
+        lastPreview={pages.at(-1)?.preview}
         onClose={() => setCamera(false)}
-        onCapture={async (blob) => {
-          setCamera(false);
-          await ingest(blob);
-        }}
+        onDone={() => setCamera(false)}
+        onCapture={processBlob}
       />
     </div>
   );
