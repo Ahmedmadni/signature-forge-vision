@@ -99,8 +99,13 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
     capturedQuadRef.current = null;
     autoArmedRef.current = true;
 
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setError("الكاميرا غير متاحة على هذا الجهاز أو المتصفح");
+      return;
+    }
+
     navigator.mediaDevices
-      ?.getUserMedia({
+      .getUserMedia({
         video: {
           facingMode: { ideal: "environment" },
           width: { ideal: 3840 },
@@ -108,19 +113,24 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
         },
         audio: false,
       })
-      .then((stream) => {
+      .then(async (stream) => {
         if (cancelled) {
           stream.getTracks().forEach((track) => track.stop());
           return;
         }
+
         streamRef.current = stream;
         const video = videoRef.current;
-        if (video) {
-          video.srcObject = stream;
-          video.onloadedmetadata = () => {
-            void video.play();
-            setReady(true);
-          };
+        if (!video) return;
+
+        video.muted = true;
+        video.playsInline = true;
+        video.srcObject = stream;
+
+        try {
+          await video.play();
+        } catch {
+          // بعض WebView تبدأ التشغيل عند canplay/playing فقط.
         }
       })
       .catch(() => {
@@ -151,7 +161,7 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
     const timer = window.setInterval(() => {
       if (disposed || detectorBusyRef.current || capturingRef.current) return;
       const video = videoRef.current;
-      if (!video || !video.videoWidth || !video.videoHeight) return;
+      if (!video || video.readyState < 2 || !video.videoWidth || !video.videoHeight) return;
 
       detectorBusyRef.current = true;
       try {
@@ -182,7 +192,9 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
         lastRawQuadRef.current = rawQuad;
 
         const previousSmooth = smoothedQuadRef.current;
-        const smoothQuad = previousSmooth ? blendQuads(previousSmooth, rawQuad, movement < 0.02 ? 0.28 : 0.48) : rawQuad;
+        const smoothQuad = previousSmooth
+          ? blendQuads(previousSmooth, rawQuad, movement < 0.02 ? 0.24 : 0.42)
+          : rawQuad;
         smoothedQuadRef.current = smoothQuad;
         latestQuadRef.current = smoothQuad;
         setDetectedQuad(smoothQuad);
@@ -192,10 +204,10 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
           if (moved > 0.055) autoArmedRef.current = true;
         }
 
-        const strongDetection = result.stableEnough && result.confidence >= 0.7 && result.edgeScore >= 0.52;
-        if (strongDetection && movement < 0.009) {
+        const strongDetection = result.stableEnough && result.confidence >= 0.72 && result.edgeScore >= 0.54;
+        if (strongDetection && movement < 0.0085) {
           stableFramesRef.current += 1;
-        } else if (movement < 0.016 && result.confidence >= 0.65) {
+        } else if (movement < 0.014 && result.confidence >= 0.68) {
           stableFramesRef.current = Math.max(0, stableFramesRef.current);
         } else {
           stableFramesRef.current = Math.max(0, stableFramesRef.current - 1);
@@ -211,7 +223,7 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
       } finally {
         detectorBusyRef.current = false;
       }
-    }, 300);
+    }, 280);
 
     return () => {
       disposed = true;
@@ -219,29 +231,24 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
     };
   }, [open, ready, shoot]);
 
+  /**
+   * الفيديو معروض بـ object-cover، لذلك يجب تطبيق نفس scale/crop على حدود الكشف.
+   * هذه النقطة تمنع انزياح الـ overlay عن الورقة على شاشات الهواتف الطويلة.
+   */
   const overlayPoints = useMemo(() => {
     const video = videoRef.current;
     if (!detectedQuad || !video || !viewBox.width || !viewBox.height || !video.videoWidth || !video.videoHeight) return "";
 
-    const videoRatio = video.videoWidth / video.videoHeight;
-    const boxRatio = viewBox.width / viewBox.height;
-    let drawWidth = viewBox.width;
-    let drawHeight = viewBox.height;
-    let offsetX = 0;
-    let offsetY = 0;
-
-    if (videoRatio > boxRatio) {
-      drawHeight = viewBox.width / videoRatio;
-      offsetY = (viewBox.height - drawHeight) / 2;
-    } else {
-      drawWidth = viewBox.height * videoRatio;
-      offsetX = (viewBox.width - drawWidth) / 2;
-    }
+    const scale = Math.max(viewBox.width / video.videoWidth, viewBox.height / video.videoHeight);
+    const drawWidth = video.videoWidth * scale;
+    const drawHeight = video.videoHeight * scale;
+    const offsetX = (viewBox.width - drawWidth) / 2;
+    const offsetY = (viewBox.height - drawHeight) / 2;
 
     return detectedQuad
       .map((point) => {
-        const x = offsetX + (point.x / video.videoWidth) * drawWidth;
-        const y = offsetY + (point.y / video.videoHeight) * drawHeight;
+        const x = offsetX + point.x * scale;
+        const y = offsetY + point.y * scale;
         return `${x},${y}`;
       })
       .join(" ");
@@ -253,86 +260,114 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
     ? "جارٍ تشغيل الكاميرا…"
     : !detectedQuad
       ? "ضع الورقة كاملة داخل الكاميرا وعلى خلفية واضحة"
-      : confidence < 0.62 || edgeScore < 0.45
+      : confidence < 0.64 || edgeScore < 0.48
         ? "حرّك الهاتف قليلًا حتى تظهر الحواف الأربع بوضوح"
         : stableFrames < 4
           ? "تم اكتشاف الورقة — ثبّت الهاتف قليلًا"
           : "الحدود ثابتة — سيتم الالتقاط تلقائيًا";
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-background text-foreground">
-      <div className="flex items-center justify-between border-b border-border bg-card/95 p-3 backdrop-blur">
+    <div className="fixed inset-0 z-50 flex flex-col bg-white text-slate-950 dark:bg-slate-950 dark:text-white">
+      <div className="flex items-center justify-between border-b border-slate-200 bg-white/95 p-3 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
         <div>
           <p className="text-sm font-semibold">المسح الذكي التلقائي</p>
-          <p className="text-xs text-muted-foreground">يتم تحديد الحواف الأربع ثم تصحيح المنظور تلقائيًا</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">يتم تحديد الحواف الأربع ثم تصحيح المنظور تلقائيًا</p>
         </div>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <X className="h-5 w-5" />
         </Button>
       </div>
 
-      <div className="relative flex-1 overflow-hidden bg-muted/30 p-3">
-        <div ref={viewportRef} className="relative h-full overflow-hidden rounded-3xl border border-border bg-card shadow-elegant">
-          <video ref={videoRef} playsInline muted className="h-full w-full object-contain" />
+      <div className="relative flex-1 overflow-hidden bg-slate-100 p-2 dark:bg-slate-900">
+        <div
+          ref={viewportRef}
+          className="relative h-full min-h-[320px] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-elegant dark:border-slate-700"
+        >
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            disablePictureInPicture
+            onCanPlay={() => setReady(true)}
+            onPlaying={() => setReady(true)}
+            className="absolute inset-0 h-full w-full bg-white object-cover dark:bg-slate-900"
+          />
 
           {overlayPoints && (
-            <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox={`0 0 ${viewBox.width} ${viewBox.height}`} preserveAspectRatio="none">
+            <svg
+              className="pointer-events-none absolute inset-0 h-full w-full"
+              viewBox={`0 0 ${viewBox.width} ${viewBox.height}`}
+              preserveAspectRatio="none"
+            >
               <polygon
                 points={overlayPoints}
-                fill="hsl(var(--primary) / 0.08)"
-                stroke="hsl(var(--primary))"
+                fill="rgb(59 130 246 / 0.06)"
+                stroke="rgb(37 99 235)"
                 strokeWidth="3"
                 strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
               />
               {overlayPoints.split(" ").map((point, index) => {
                 const [cx, cy] = point.split(",").map(Number);
-                return <circle key={index} cx={cx} cy={cy} r="6" fill="hsl(var(--background))" stroke="hsl(var(--primary))" strokeWidth="3" />;
+                return (
+                  <circle
+                    key={index}
+                    cx={cx}
+                    cy={cy}
+                    r="6"
+                    fill="white"
+                    stroke="rgb(37 99 235)"
+                    strokeWidth="3"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                );
               })}
             </svg>
           )}
 
           {!detectedQuad && ready && (
-            <div className="pointer-events-none absolute inset-[8%] rounded-2xl border-2 border-dashed border-primary/45" />
+            <div className="pointer-events-none absolute inset-[7%] rounded-2xl border-2 border-dashed border-blue-500/55" />
           )}
 
-          <div className="absolute start-3 top-3 flex items-center gap-2 rounded-full border border-border bg-background/90 px-3 py-1.5 text-xs shadow-sm backdrop-blur">
-            <Images className="h-4 w-4 text-primary" />
+          <div className="absolute start-3 top-3 flex items-center gap-2 rounded-full border border-white/60 bg-white/90 px-3 py-1.5 text-xs text-slate-900 shadow-md backdrop-blur">
+            <Images className="h-4 w-4 text-blue-600" />
             {pageCount} صفحة
           </div>
 
-          <div className="absolute end-3 top-3 flex items-center gap-2 rounded-full border border-border bg-background/90 px-3 py-1.5 text-xs shadow-sm backdrop-blur">
-            <ScanLine className="h-4 w-4 text-primary" />
+          <div className="absolute end-3 top-3 flex items-center gap-2 rounded-full border border-white/60 bg-white/90 px-3 py-1.5 text-xs text-slate-900 shadow-md backdrop-blur">
+            <ScanLine className="h-4 w-4 text-blue-600" />
             {detectedQuad ? `${Math.round(confidence * 100)}%` : "بحث"}
           </div>
 
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full border border-border bg-background/90 px-4 py-2 text-center text-xs font-medium shadow-sm backdrop-blur">
+          <div className="absolute bottom-4 left-1/2 max-w-[85%] -translate-x-1/2 rounded-full border border-white/60 bg-white/92 px-4 py-2 text-center text-xs font-medium text-slate-900 shadow-md backdrop-blur">
             {status}
           </div>
 
           {lastPreview && (
-            <div className="absolute bottom-3 start-3 overflow-hidden rounded-xl border-2 border-background bg-card shadow-lg">
+            <div className="absolute bottom-3 start-3 overflow-hidden rounded-xl border-2 border-white bg-white shadow-lg">
               <img src={lastPreview} alt="آخر صفحة" className="h-16 w-12 object-cover" />
             </div>
           )}
 
-          {flash && <div className="pointer-events-none absolute inset-0 bg-white/80" />}
+          {flash && <div className="pointer-events-none absolute inset-0 bg-white/75" />}
 
           {!ready && !error && (
-            <div className="absolute inset-0 grid place-items-center bg-background/50">
-              <Loader2 className="h-7 w-7 animate-spin text-primary" />
+            <div className="absolute inset-0 grid place-items-center bg-white/92 text-slate-700">
+              <Loader2 className="h-7 w-7 animate-spin text-blue-600" />
             </div>
           )}
 
           {error && (
-            <div className="absolute inset-0 grid place-items-center bg-background/90 px-6 text-center text-sm text-foreground">
+            <div className="absolute inset-0 grid place-items-center bg-white px-6 text-center text-sm text-slate-900">
               {error}
             </div>
           )}
         </div>
       </div>
 
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 border-t border-border bg-card/95 px-4 py-4 backdrop-blur">
-        <div className="justify-self-start text-xs text-muted-foreground">
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 border-t border-slate-200 bg-white/95 px-4 py-4 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
+        <div className="justify-self-start text-xs text-slate-500 dark:text-slate-400">
           {detectedQuad ? "الحواف محددة تلقائيًا" : "اترك مساحة صغيرة حول الورقة"}
         </div>
 
@@ -340,9 +375,9 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
           onClick={() => void shoot(false)}
           disabled={!ready || capturing}
           aria-label="التقاط صفحة يدويًا"
-          className="press grid h-20 w-20 place-items-center rounded-full border-4 border-primary/20 bg-gradient-brand shadow-glow disabled:opacity-40"
+          className="press grid h-20 w-20 place-items-center rounded-full border-4 border-blue-100 bg-blue-600 shadow-lg disabled:opacity-40"
         >
-          {capturing ? <Loader2 className="h-7 w-7 animate-spin text-primary-foreground" /> : <Camera className="h-7 w-7 text-primary-foreground" />}
+          {capturing ? <Loader2 className="h-7 w-7 animate-spin text-white" /> : <Camera className="h-7 w-7 text-white" />}
         </button>
 
         <Button onClick={onDone} disabled={pageCount === 0 || capturing} className="justify-self-end">
