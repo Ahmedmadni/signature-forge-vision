@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Camera, Check, Images, Loader2, ScanLine, X } from "lucide-react";
+import { Camera, Check, Images, Loader2, RefreshCcw, ScanLine, Wand2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ScanCropper } from "@/components/app/ScanCropper";
 import { playSfx, haptic } from "@/lib/sfx";
 import { analyzeDocumentFrame, blendQuads, quadDistance } from "@/lib/live-scan";
-import type { Quad } from "@/lib/scan";
+import { defaultQuad, loadImage, type Quad } from "@/lib/scan";
+import { detectDocumentPrecise } from "@/lib/precise-document-detect";
 
 interface Props {
   open: boolean;
