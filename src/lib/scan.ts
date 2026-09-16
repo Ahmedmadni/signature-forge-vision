@@ -489,22 +489,44 @@ export function canvasToJpeg(canvas: HTMLCanvasElement, quality = 0.92): Promise
 /* تصدير PDF                                                           */
 /* ------------------------------------------------------------------ */
 
-/** يبني ملف PDF من صفحات ممسوحة (صفحة لكل صورة، بنفس نسبة الأبعاد) */
-export async function buildScannedPdf(canvases: HTMLCanvasElement[]): Promise<Uint8Array> {
+export interface BuildPdfOptions {
+  /** جودة ضغط JPEG (0–1) */
+  jpegQuality?: number;
+  /** مقاس صفحة ثابت بالنقاط، أو undefined لاستخدام نسبة الصورة */
+  pageSizePt?: [number, number];
+}
+
+/** يبني ملف PDF من صفحات ممسوحة (صفحة لكل صورة) */
+export async function buildScannedPdf(
+  canvases: HTMLCanvasElement[],
+  options: BuildPdfOptions = {},
+): Promise<Uint8Array> {
   const { PDFDocument } = await import("pdf-lib");
+  const quality = options.jpegQuality ?? 0.92;
   const doc = await PDFDocument.create();
   for (const canvas of canvases) {
-    const blob = await canvasToJpeg(canvas, 0.92);
+    const blob = await canvasToJpeg(canvas, quality);
     const bytes = new Uint8Array(await blob.arrayBuffer());
     const img = await doc.embedJpg(bytes);
-    // مقاس A4 بنسبة الصورة: نحافظ على النسبة ونجعل العرض 595pt كحد أقصى
-    const maxW = 595.28;
-    const maxH = 841.89;
-    const ratio = Math.min(maxW / img.width, maxH / img.height);
-    const w = img.width * ratio;
-    const h = img.height * ratio;
-    const page = doc.addPage([w, h]);
-    page.drawImage(img, { x: 0, y: 0, width: w, height: h });
+
+    if (options.pageSizePt) {
+      // مقاس صفحة ثابت: نضع الصورة في المنتصف مع الحفاظ على نسبتها
+      let [pw, ph] = options.pageSizePt;
+      if (img.width > img.height) [pw, ph] = [ph, pw]; // عرضي
+      const ratio = Math.min(pw / img.width, ph / img.height);
+      const w = img.width * ratio;
+      const h = img.height * ratio;
+      const page = doc.addPage([pw, ph]);
+      page.drawImage(img, { x: (pw - w) / 2, y: (ph - h) / 2, width: w, height: h });
+    } else {
+      const maxW = 595.28;
+      const maxH = 841.89;
+      const ratio = Math.min(maxW / img.width, maxH / img.height);
+      const w = img.width * ratio;
+      const h = img.height * ratio;
+      const page = doc.addPage([w, h]);
+      page.drawImage(img, { x: 0, y: 0, width: w, height: h });
+    }
   }
   return doc.save();
 }

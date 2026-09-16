@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import {
   Camera,
   ImagePlus,
@@ -13,6 +13,7 @@ import {
   Wand2,
   SlidersHorizontal,
   GripVertical,
+  Settings2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CameraCapture } from "@/components/app/CameraCapture";
@@ -26,6 +27,15 @@ import {
   type ScanFilter,
 } from "@/lib/scan";
 import { detectDocumentPrecise } from "@/lib/precise-document-detect";
+import {
+  getScanSettings,
+  PAGE_SIZE_PT,
+  QUALITY_JPEG,
+  QUALITY_MAX_PX,
+  QUALITY_OPTIONS,
+  PAGE_SIZE_OPTIONS,
+  useScanSettings,
+} from "@/lib/scan-settings";
 import { saveFile } from "@/lib/save-file";
 import { setPendingFile } from "@/lib/pending-file";
 import { toast } from "sonner";
@@ -75,6 +85,7 @@ const filters: { key: ScanFilter; label: string }[] = [
 
 function ScanPage() {
   const navigate = useNavigate();
+  const settings = useScanSettings();
   const fileRef = useRef<HTMLInputElement>(null);
   const [camera, setCamera] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
@@ -94,7 +105,15 @@ function ScanPage() {
       const quad = cameraQuad ?? detection?.quad ?? defaultQuad(width, height);
       const filter: ScanFilter = "enhanced";
       const rotation = 0 as const;
-      const canvas = renderPage(img as CanvasImageSource, width, height, quad, filter, rotation);
+      const canvas = renderPage(
+        img as CanvasImageSource,
+        width,
+        height,
+        quad,
+        filter,
+        rotation,
+        QUALITY_MAX_PX[getScanSettings().quality],
+      );
       const page: Page = {
         id: crypto.randomUUID(),
         canvas,
@@ -139,7 +158,15 @@ function ScanPage() {
     setBusy("جارٍ تحديث الصفحة…");
     try {
       await new Promise((resolve) => setTimeout(resolve, 20));
-      const canvas = renderPage(draft.image, draft.width, draft.height, draft.quad, draft.filter, draft.rotation);
+      const canvas = renderPage(
+        draft.image,
+        draft.width,
+        draft.height,
+        draft.quad,
+        draft.filter,
+        draft.rotation,
+        QUALITY_MAX_PX[getScanSettings().quality],
+      );
       const next: Page = {
         id: draft.pageId ?? crypto.randomUUID(),
         canvas,
@@ -168,7 +195,15 @@ function ScanPage() {
 
   const rotatePage = (page: Page) => {
     const rotation = (((page.rotation + 90) % 360) as 0 | 90 | 180 | 270);
-    const canvas = renderPage(page.source, page.sourceWidth, page.sourceHeight, page.quad, page.filter, rotation);
+    const canvas = renderPage(
+      page.source,
+      page.sourceWidth,
+      page.sourceHeight,
+      page.quad,
+      page.filter,
+      rotation,
+      QUALITY_MAX_PX[getScanSettings().quality],
+    );
     setPages((current) =>
       current.map((item) =>
         item.id === page.id
@@ -189,7 +224,11 @@ function ScanPage() {
   };
 
   const makePdf = async () => {
-    const bytes = await buildScannedPdf(pages.map((page) => page.canvas));
+    const { quality, pageSize } = getScanSettings();
+    const bytes = await buildScannedPdf(pages.map((page) => page.canvas), {
+      jpegQuality: QUALITY_JPEG[quality],
+      pageSizePt: pageSize === "auto" ? undefined : PAGE_SIZE_PT[pageSize],
+    });
     const copy = new Uint8Array(bytes.length);
     copy.set(bytes);
     return new Blob([copy.buffer], { type: "application/pdf" });
@@ -323,6 +362,19 @@ function ScanPage() {
         </p>
       </header>
 
+      <Link
+        to="/settings"
+        className="press flex items-center justify-between rounded-2xl border border-border bg-card/60 px-4 py-3"
+      >
+        <span className="flex items-center gap-2 text-sm font-medium">
+          <Settings2 className="h-4 w-4 text-primary" /> إعدادات المسح
+        </span>
+        <span className="text-[11px] text-muted-foreground">
+          {QUALITY_OPTIONS.find((o) => o.key === settings.quality)?.label} ·{" "}
+          {PAGE_SIZE_OPTIONS.find((o) => o.key === settings.pageSize)?.label}
+        </span>
+      </Link>
+
       <input
         ref={fileRef}
         type="file"
@@ -450,7 +502,9 @@ function ScanPage() {
         lastPreview={pages.at(-1)?.preview}
         onClose={() => setCamera(false)}
         onDone={() => setCamera(false)}
-        onCapture={processBlob}
+        onCapture={async (blob, quad) => {
+          await processBlob(blob, quad);
+        }}
       />
     </div>
   );

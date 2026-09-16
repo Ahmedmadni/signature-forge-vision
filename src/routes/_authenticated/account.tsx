@@ -1,5 +1,5 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { LogOut, Crown, Moon, Sun, Mail } from "lucide-react";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { LogOut, Crown, Moon, Sun, Mail, Settings2, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/lib/use-auth";
@@ -71,6 +71,16 @@ function AccountPage() {
       </section>
 
       <section className="rounded-3xl border border-border bg-card/60 p-2">
+        <Link
+          to="/settings"
+          className="flex w-full items-center justify-between rounded-2xl px-3 py-3 text-sm hover:bg-muted/60"
+        >
+          <span className="flex items-center gap-2">
+            <Settings2 className="h-4 w-4" />
+            إعدادات المسح الضوئي
+          </span>
+          <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+        </Link>
         <button
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
           className="flex w-full items-center justify-between rounded-2xl px-3 py-3 text-sm hover:bg-muted/60"
