@@ -502,7 +502,9 @@ function ScanPage() {
         lastPreview={pages.at(-1)?.preview}
         onClose={() => setCamera(false)}
         onDone={() => setCamera(false)}
-        onCapture={processBlob}
+        onCapture={async (blob, quad) => {
+          await processBlob(blob, quad);
+        }}
       />
     </div>
   );
