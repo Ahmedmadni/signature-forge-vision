@@ -45,6 +45,13 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
   const [edgeScore, setEdgeScore] = useState(0);
   const [stableFrames, setStableFrames] = useState(0);
   const [viewBox, setViewBox] = useState<ViewBox>({ width: 0, height: 0 });
+  const [review, setReview] = useState<{
+    blob: Blob;
+    image: CanvasImageSource;
+    width: number;
+    height: number;
+    quad: Quad;
+  } | null>(null);
 
   const shoot = useCallback(
     async (automatic = false) => {
