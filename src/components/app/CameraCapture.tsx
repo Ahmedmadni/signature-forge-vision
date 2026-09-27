@@ -138,8 +138,9 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
       .getUserMedia({
         video: {
           facingMode: { ideal: "environment" },
-          width: { ideal: 3840 },
-          height: { ideal: 2160 },
+          width: { ideal: 2560 },
+          height: { ideal: 1440 },
+          frameRate: { ideal: 30, max: 30 },
         },
         audio: false,
       })
@@ -150,6 +151,33 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
         }
 
         streamRef.current = stream;
+
+        const track = stream.getVideoTracks()[0];
+        if (track) {
+          try {
+            track.contentHint = "detail";
+          } catch {
+            // بعض WebView لا تدعم contentHint.
+          }
+
+          try {
+            const capabilities = track.getCapabilities?.() as MediaTrackCapabilities & {
+              focusMode?: string[];
+              exposureMode?: string[];
+              whiteBalanceMode?: string[];
+            };
+            const advanced: Record<string, unknown> = {};
+            if (capabilities?.focusMode?.includes("continuous")) advanced.focusMode = "continuous";
+            if (capabilities?.exposureMode?.includes("continuous")) advanced.exposureMode = "continuous";
+            if (capabilities?.whiteBalanceMode?.includes("continuous")) advanced.whiteBalanceMode = "continuous";
+            if (Object.keys(advanced).length) {
+              await track.applyConstraints({ advanced: [advanced as MediaTrackConstraintSet] });
+            }
+          } catch {
+            // لا نعطّل الماسح إذا لم يدعم الجهاز قيود التركيز/الإضاءة المتقدمة.
+          }
+        }
+
         const video = videoRef.current;
         if (!video) return;
 
@@ -295,7 +323,7 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
           if (moved > 0.055) autoArmedRef.current = true;
         }
 
-        const strongDetection = result.stableEnough && result.confidence >= 0.72 && result.edgeScore >= 0.54;
+        const strongDetection = result.stableEnough && result.confidence >= 0.76 && result.edgeScore >= 0.58;
         if (strongDetection && movement < 0.0085) {
           stableFramesRef.current += 1;
         } else if (movement < 0.014 && result.confidence >= 0.68) {
@@ -305,7 +333,7 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
         }
         setStableFrames(stableFramesRef.current);
 
-        if (autoArmedRef.current && stableFramesRef.current >= 5) {
+        if (autoArmedRef.current && stableFramesRef.current >= 6) {
           autoArmedRef.current = false;
           stableFramesRef.current = 0;
           setStableFrames(0);
