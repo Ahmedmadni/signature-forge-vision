@@ -26,7 +26,7 @@ import {
   type Quad,
   type ScanFilter,
 } from "@/lib/scan";
-import { detectDocumentPrecise } from "@/lib/precise-document-detect";
+import { detectDocumentRefined } from "@/lib/document-refine";
 import {
   getScanSettings,
   PAGE_SIZE_PT,
@@ -101,7 +101,7 @@ function ScanPage() {
       const height = "height" in img ? Number(img.height) : 0;
       if (!width || !height) throw new Error("invalid-image");
 
-      const detection = cameraQuad ? null : detectDocumentPrecise(img as CanvasImageSource, width, height);
+      const detection = cameraQuad ? null : detectDocumentRefined(img as CanvasImageSource, width, height);
       const quad = cameraQuad ?? detection?.quad ?? defaultQuad(width, height);
       const filter: ScanFilter = "enhanced";
       const rotation = 0 as const;
@@ -318,7 +318,7 @@ function ScanPage() {
             onClick={() =>
               setDraft((current) => {
                 if (!current) return current;
-                const detection = detectDocumentPrecise(current.image, current.width, current.height);
+                const detection = detectDocumentRefined(current.image, current.width, current.height);
                 if (!detection) {
                   toast.warning("لم يتم العثور على أربع حواف مؤكدة. يمكنك ضبط الزوايا يدويًا.");
                   return current;
