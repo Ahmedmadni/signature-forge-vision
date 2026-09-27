@@ -23,7 +23,8 @@ interface ViewBox {
 
 /** كاميرا ماسح ضوئي مع كشف حي، تثبيت للحواف، والتقاط تلقائي. */
 export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, onCapture }: Props) {
-  const videoRef = useRef<HTMLVideoElement>(null);\n  const previewCanvasRef = useRef<HTMLCanvasElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const previewCanvasRef = useRef<HTMLCanvasElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const lastRawQuadRef = useRef<Quad | null>(null);
@@ -34,7 +35,8 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
   const lostFramesRef = useRef(0);
   const autoArmedRef = useRef(true);
   const capturingRef = useRef(false);
-  const detectorBusyRef = useRef(false);\n  const qualityRef = useRef({ confidence: 0, edgeScore: 0 });
+  const detectorBusyRef = useRef(false);
+  const qualityRef = useRef({ confidence: 0, edgeScore: 0 });
 
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
@@ -195,7 +197,7 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
     observer.observe(element);
     update();
     return () => observer.disconnect();
-  }, [open]);
+  }, [open, review]);
 
   // نرسم المعاينة على Canvas بدل الاعتماد على رسم <video> داخل Android WebView.
   // هذا يمنع الشاشة السوداء على بعض الأجهزة ويضمن نفس هندسة object-contain المستخدمة للـoverlay.
