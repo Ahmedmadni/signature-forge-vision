@@ -173,6 +173,20 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
   }, [open]);
 
   useEffect(() => {
+    if (!open || review) return;
+    const video = videoRef.current;
+    const stream = streamRef.current;
+    if (!video || !stream) return;
+
+    if (video.srcObject !== stream) video.srcObject = stream;
+    video.muted = true;
+    video.playsInline = true;
+    void video.play().catch(() => {
+      // onCanPlay/onPlaying will mark the preview ready when WebView resumes painting.
+    });
+  }, [open, review]);
+
+  useEffect(() => {
     const element = viewportRef.current;
     if (!element) return;
     const update = () => setViewBox({ width: element.clientWidth, height: element.clientHeight });
