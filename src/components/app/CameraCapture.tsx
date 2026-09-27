@@ -23,7 +23,7 @@ interface ViewBox {
 
 /** كاميرا ماسح ضوئي مع كشف حي، تثبيت للحواف، والتقاط تلقائي. */
 export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, onCapture }: Props) {
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);\n  const previewCanvasRef = useRef<HTMLCanvasElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const lastRawQuadRef = useRef<Quad | null>(null);
@@ -195,6 +195,51 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
     update();
     return () => observer.disconnect();
   }, [open]);
+
+  // نرسم المعاينة على Canvas بدل الاعتماد على رسم <video> داخل Android WebView.
+  // هذا يمنع الشاشة السوداء على بعض الأجهزة ويضمن نفس هندسة object-contain المستخدمة للـoverlay.
+  useEffect(() => {
+    if (!open || !ready || review) return;
+
+    let frame = 0;
+    let lastPaint = 0;
+    const paint = (time: number) => {
+      frame = window.requestAnimationFrame(paint);
+      if (time - lastPaint < 33) return; // نحو 30fps كحد أقصى
+      lastPaint = time;
+
+      const video = videoRef.current;
+      const canvas = previewCanvasRef.current;
+      if (!video || !canvas || video.readyState < 2 || !video.videoWidth || !video.videoHeight) return;
+      if (!viewBox.width || !viewBox.height) return;
+
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      const pixelWidth = Math.max(1, Math.round(viewBox.width * dpr));
+      const pixelHeight = Math.max(1, Math.round(viewBox.height * dpr));
+      if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
+        canvas.width = pixelWidth;
+        canvas.height = pixelHeight;
+      }
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, viewBox.width, viewBox.height);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+
+      const scale = Math.min(viewBox.width / video.videoWidth, viewBox.height / video.videoHeight);
+      const drawWidth = video.videoWidth * scale;
+      const drawHeight = video.videoHeight * scale;
+      const offsetX = (viewBox.width - drawWidth) / 2;
+      const offsetY = (viewBox.height - drawHeight) / 2;
+      ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, offsetX, offsetY, drawWidth, drawHeight);
+    };
+
+    frame = window.requestAnimationFrame(paint);
+    return () => window.cancelAnimationFrame(frame);
+  }, [open, ready, review, viewBox]);
 
   useEffect(() => {
     if (!open || !ready || review) return;
@@ -411,6 +456,11 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
           ref={viewportRef}
           className="relative h-full min-h-[320px] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-elegant"
         >
+          <canvas
+            ref={previewCanvasRef}
+            className="absolute inset-0 h-full w-full bg-white"
+            aria-label="معاينة الكاميرا"
+          />
           <video
             ref={videoRef}
             autoPlay
@@ -419,7 +469,8 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
             disablePictureInPicture
             onCanPlay={() => setReady(true)}
             onPlaying={() => setReady(true)}
-            className="absolute inset-0 h-full w-full bg-white object-contain"
+            className="pointer-events-none absolute left-0 top-0 h-px w-px opacity-0"
+            aria-hidden="true"
           />
 
           {overlayPoints && (
