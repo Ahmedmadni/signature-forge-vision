@@ -5,7 +5,7 @@ import { ScanCropper } from "@/components/app/ScanCropper";
 import { playSfx, haptic } from "@/lib/sfx";
 import { analyzeDocumentFrame, blendQuads, quadDistance } from "@/lib/live-scan";
 import { defaultQuad, loadImage, type Quad } from "@/lib/scan";
-import { detectDocumentPrecise } from "@/lib/precise-document-detect";
+import { detectDocumentRefined } from "@/lib/document-refine";
 
 interface Props {
   open: boolean;
@@ -34,7 +34,7 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
   const lostFramesRef = useRef(0);
   const autoArmedRef = useRef(true);
   const capturingRef = useRef(false);
-  const detectorBusyRef = useRef(false);
+  const detectorBusyRef = useRef(false);\n  const qualityRef = useRef({ confidence: 0, edgeScore: 0 });
 
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
@@ -79,11 +79,30 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
         });
 
         const captureQuad = latestQuadRef.current ?? undefined;
+        const quality = qualityRef.current;
         capturedQuadRef.current = captureQuad ?? null;
         autoArmedRef.current = false;
         stableFramesRef.current = 0;
         setStableFrames(0);
-        await onCapture(blob, captureQuad);
+
+        // اللقطة التلقائية الموثوقة تُضاف فورًا. اللقطة الضعيفة تُراجع قبل القص.
+        if (captureQuad && quality.confidence >= 0.64 && quality.edgeScore >= 0.48) {
+          await onCapture(blob, captureQuad);
+        } else {
+          const image = await loadImage(blob);
+          const width = "width" in image ? Number(image.width) : 0;
+          const height = "height" in image ? Number(image.height) : 0;
+          if (!width || !height) throw new Error("invalid-capture");
+
+          const detection = detectDocumentRefined(image as CanvasImageSource, width, height);
+          setReview({
+            blob,
+            image: image as CanvasImageSource,
+            width,
+            height,
+            quad: detection?.quad ?? defaultQuad(width, height),
+          });
+        }
       } finally {
         capturingRef.current = false;
         setCapturing(false);
@@ -164,7 +183,7 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
   }, [open]);
 
   useEffect(() => {
-    if (!open || !ready) return;
+    if (!open || !ready || review) return;
     let disposed = false;
 
     const timer = window.setInterval(() => {
@@ -175,6 +194,7 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
       detectorBusyRef.current = true;
       try {
         const result = analyzeDocumentFrame(video, video.videoWidth, video.videoHeight);
+        qualityRef.current = { confidence: result.confidence, edgeScore: result.edgeScore };
         setConfidence(result.confidence);
         setEdgeScore(result.edgeScore);
 
@@ -238,17 +258,17 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
       disposed = true;
       window.clearInterval(timer);
     };
-  }, [open, ready, shoot]);
+  }, [open, ready, review, shoot]);
 
   /**
-   * الفيديو معروض بـ object-cover، لذلك يجب تطبيق نفس scale/crop على حدود الكشف.
-   * هذه النقطة تمنع انزياح الـ overlay عن الورقة على شاشات الهواتف الطويلة.
+   * نعرض الفريم كاملًا بـ object-contain حتى لا تُقص أطراف الورقة.
+   * المساحات المتبقية بيضاء، لذلك لا توجد أشرطة سوداء، والـoverlay يستخدم نفس التحويل.
    */
   const overlayPoints = useMemo(() => {
     const video = videoRef.current;
     if (!detectedQuad || !video || !viewBox.width || !viewBox.height || !video.videoWidth || !video.videoHeight) return "";
 
-    const scale = Math.max(viewBox.width / video.videoWidth, viewBox.height / video.videoHeight);
+    const scale = Math.min(viewBox.width / video.videoWidth, viewBox.height / video.videoHeight);
     const drawWidth = video.videoWidth * scale;
     const drawHeight = video.videoHeight * scale;
     const offsetX = (viewBox.width - drawWidth) / 2;
@@ -264,6 +284,91 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
   }, [detectedQuad, viewBox]);
 
   if (!open) return null;
+
+  const releaseReviewImage = () => {
+    const image = review?.image;
+    if (image && "close" in image && typeof image.close === "function") {
+      image.close();
+    }
+  };
+
+  if (review) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col bg-white text-slate-950">
+        <div className="flex items-center justify-between border-b border-slate-200 bg-white p-3">
+          <div>
+            <p className="text-sm font-semibold">مراجعة حدود الصفحة</p>
+            <p className="text-xs text-slate-500">حرّك الزوايا فقط إذا لم تلتصق بالورقة بدقة.</p>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              releaseReviewImage();
+              setReview(null);
+              autoArmedRef.current = true;
+            }}
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-auto bg-slate-100 p-3">
+          <ScanCropper
+            image={review.image}
+            imageWidth={review.width}
+            imageHeight={review.height}
+            quad={review.quad}
+            onChange={(quad) => setReview((current) => (current ? { ...current, quad } : current))}
+          />
+        </div>
+
+        <div className="space-y-3 border-t border-slate-200 bg-white p-4">
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                const detection = detectDocumentRefined(review.image, review.width, review.height);
+                setReview((current) =>
+                  current
+                    ? { ...current, quad: detection?.quad ?? defaultQuad(current.width, current.height) }
+                    : current,
+                );
+              }}
+            >
+              <Wand2 className="h-4 w-4" />
+              إعادة الكشف
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                releaseReviewImage();
+                setReview(null);
+                autoArmedRef.current = true;
+              }}
+            >
+              <RefreshCcw className="h-4 w-4" />
+              إعادة التصوير
+            </Button>
+          </div>
+
+          <Button
+            className="w-full bg-blue-600 text-white hover:bg-blue-700"
+            onClick={async () => {
+              const current = review;
+              await onCapture(current.blob, current.quad);
+              releaseReviewImage();
+              setReview(null);
+              autoArmedRef.current = false;
+            }}
+          >
+            <Check className="h-4 w-4" />
+            اعتماد الصفحة
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const status = !ready
     ? "جارٍ تشغيل الكاميرا…"
@@ -287,10 +392,10 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
         </Button>
       </div>
 
-      <div className="relative flex-1 overflow-hidden bg-slate-100 p-2 dark:bg-slate-900">
+      <div className="relative flex-1 overflow-hidden bg-slate-100 p-2">
         <div
           ref={viewportRef}
-          className="relative h-full min-h-[320px] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-elegant dark:border-slate-700"
+          className="relative h-full min-h-[320px] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-elegant"
         >
           <video
             ref={videoRef}
@@ -300,7 +405,7 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
             disablePictureInPicture
             onCanPlay={() => setReady(true)}
             onPlaying={() => setReady(true)}
-            className="absolute inset-0 h-full w-full bg-white object-cover dark:bg-slate-900"
+            className="absolute inset-0 h-full w-full bg-white object-contain"
           />
 
           {overlayPoints && (
