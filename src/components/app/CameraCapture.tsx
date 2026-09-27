@@ -187,6 +187,7 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
   }, [open, review]);
 
   useEffect(() => {
+    if (review) return;
     const element = viewportRef.current;
     if (!element) return;
     const update = () => setViewBox({ width: element.clientWidth, height: element.clientHeight });
@@ -440,11 +441,11 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
           : "الحدود ثابتة — سيتم الالتقاط تلقائيًا";
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-white text-slate-950 dark:bg-slate-950 dark:text-white">
-      <div className="flex items-center justify-between border-b border-slate-200 bg-white/95 p-3 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
+    <div className="fixed inset-0 z-50 flex flex-col bg-white text-slate-950">
+      <div className="flex items-center justify-between border-b border-slate-200 bg-white/95 p-3 backdrop-blur">
         <div>
           <p className="text-sm font-semibold">المسح الذكي التلقائي</p>
-          <p className="text-xs text-slate-500 dark:text-slate-400">يتم تحديد الحواف الأربع ثم تصحيح المنظور تلقائيًا</p>
+          <p className="text-xs text-slate-500">يتم تحديد الحواف الأربع ثم تصحيح المنظور تلقائيًا</p>
         </div>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <X className="h-5 w-5" />
@@ -469,7 +470,7 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
             disablePictureInPicture
             onCanPlay={() => setReady(true)}
             onPlaying={() => setReady(true)}
-            className="pointer-events-none absolute left-0 top-0 h-px w-px opacity-0"
+            className="pointer-events-none absolute inset-0 h-full w-full opacity-0"
             aria-hidden="true"
           />
 
@@ -545,8 +546,8 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
         </div>
       </div>
 
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 border-t border-slate-200 bg-white/95 px-4 py-4 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
-        <div className="justify-self-start text-xs text-slate-500 dark:text-slate-400">
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 border-t border-slate-200 bg-white/95 px-4 py-4 backdrop-blur">
+        <div className="justify-self-start text-xs text-slate-500">
           {detectedQuad ? "الحواف محددة تلقائيًا" : "اترك مساحة صغيرة حول الورقة"}
         </div>
 
