@@ -9,6 +9,8 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm run lint && npm run build",
     "format": "prettier --write .",
     "android:shell": "node scripts/android-shell.mjs",
     "android:sync": "vite build && node scripts/android-shell.mjs && cap sync android"
