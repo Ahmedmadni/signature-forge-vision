@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { degrees, PDFDocument } from "pdf-lib";
-import { buildSignedPdf, type Placement } from "./sign-pdf";
+import { buildSignedPdf, placementToDrawOptions, type Placement } from "./sign-pdf";
 
 const ONE_PIXEL_PNG =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9ZQmcAAAAASUVORK5CYII=";
@@ -14,6 +14,44 @@ async function makePdf(pageCount = 1) {
 }
 
 describe("buildSignedPdf", () => {
+
+  it("maps visual placement coordinates for 0/90/180/270 degree pages", () => {
+    const placement = { xPct: 0.1, yPct: 0.2, wPct: 0.3, hPct: 0.1 };
+    const cropBox = { x: 10, y: 20, width: 600, height: 800 };
+
+    expect(placementToDrawOptions(placement, cropBox, 0)).toMatchObject({
+      x: 70,
+      y: 580,
+      width: 180,
+      height: 80,
+      rotation: 0,
+    });
+
+    expect(placementToDrawOptions(placement, cropBox, 90)).toMatchObject({
+      x: 190,
+      y: 100,
+      width: 240,
+      height: 60,
+      rotation: 90,
+    });
+
+    expect(placementToDrawOptions(placement, cropBox, 180)).toMatchObject({
+      x: 550,
+      y: 180,
+      width: 180,
+      height: 80,
+      rotation: 180,
+    });
+
+    expect(placementToDrawOptions(placement, cropBox, 270)).toMatchObject({
+      x: 430,
+      y: 740,
+      width: 240,
+      height: 60,
+      rotation: 270,
+    });
+  });
+
   it("produces a readable PDF with the original page count", async () => {
     const source = await makePdf(2);
     const placement: Placement = {
