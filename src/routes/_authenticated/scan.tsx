@@ -49,6 +49,7 @@ import { setPendingFile } from "@/lib/pending-file";
 import { toast } from "sonner";
 import { playSfx, haptic } from "@/lib/sfx";
 import { moveItem, nextQuarterTurn } from "@/lib/scan-page-order";
+import { shouldPreserveNativeProcessedPage } from "@/lib/scan-page-policy";
 
 export const Route = createFileRoute("/_authenticated/scan")({
   ssr: false,
@@ -97,13 +98,15 @@ const filters: { key: ScanFilter; label: string }[] = [
 /** Respect already corrected ML Kit output unless the user changes its crop/filter. */
 function drawPage(draft: Draft): HTMLCanvasElement {
   const maxSize = QUALITY_MAX_PX[getScanSettings().quality];
-  const full = fullImageQuad(draft.width, draft.height);
-  const unchangedCorners = draft.quad.every(
-    (point, i) =>
-      Math.abs(point.x - full[i].x) < 1 &&
-      Math.abs(point.y - full[i].y) < 1,
-  );
-  if (draft.nativeProcessed && draft.filter === "color" && unchangedCorners) {
+  if (
+    shouldPreserveNativeProcessedPage(
+      draft.nativeProcessed,
+      draft.filter,
+      draft.quad,
+      draft.width,
+      draft.height,
+    )
+  ) {
     return renderProcessedPage(
       draft.image,
       draft.width,
