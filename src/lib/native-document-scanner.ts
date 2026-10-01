@@ -35,12 +35,12 @@ function isCancelled(error: unknown): boolean {
 function base64ToJpegBlob(raw: string): Blob {
   const base64 = raw.replace(/^data:[^,]*,/, "").replace(/\s/g, "");
   const binary = atob(base64);
-  const blocks: Uint8Array[] = [];
+  const blocks: ArrayBuffer[] = [];
   for (let offset = 0; offset < binary.length; offset += 64 * 1024) {
     const slice = binary.slice(offset, offset + 64 * 1024);
     const bytes = new Uint8Array(slice.length);
     for (let i = 0; i < slice.length; i++) bytes[i] = slice.charCodeAt(i);
-    blocks.push(bytes);
+    blocks.push(bytes.buffer as ArrayBuffer);
   }
   return new Blob(blocks, { type: "image/jpeg" });
 }
