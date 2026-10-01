@@ -81,7 +81,7 @@ describe("Android ML Kit scanner bridge", () => {
     expect(pages).toHaveLength(2);
     expect(native.scanDocument).toHaveBeenCalledWith({
       galleryImportAllowed: true,
-      pageLimit: 20,
+      pageLimit: 10,
       resultFormats: "JPEG",
       scannerMode: "FULL",
     });
@@ -94,6 +94,11 @@ describe("Android ML Kit scanner bridge", () => {
   it("does not treat scanner cancellation as a scan failure", async () => {
     native.scanDocument.mockRejectedValue(new Error("Scan cancelled or failed. Result code: 0"));
     expect(await scanNativeDocuments()).toBeNull();
+  });
+
+  it("reports native failures instead of silently treating them as cancellations", async () => {
+    native.scanDocument.mockRejectedValue(new Error("Scan cancelled or failed. Result code: 1"));
+    await expect(scanNativeDocuments()).rejects.toThrow("Result code: 1");
   });
 
   it("requires a newly built APK when native plugin is absent", async () => {
