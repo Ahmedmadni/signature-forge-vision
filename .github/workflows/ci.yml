@@ -64,11 +64,11 @@ jobs:
       - name: Sync Android shell
         run: npm run android:sync
 
-      - name: Configure Java
+      - name: Configure Java 21 (ML Kit plugin requirement)
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
 
       # setup-android provisions command-line tools and exposes sdkmanager.
       # Override its obsolete default package list ("tools platform-tools").
