@@ -218,11 +218,15 @@ function ScanPage() {
         toast.warning("تعذّرت معالجة بعض الصفحات؛ الصفحات التي نجحت محفوظة في القائمة.");
       }
     } catch (error) {
-      if (error instanceof NativeScannerUnavailableError) {
-        toast.warning(error.message);
+      const message = error instanceof Error ? error.message : "تعذّر تشغيل الماسح الأصلي";
+      const unsupported =
+        error instanceof NativeScannerUnavailableError ||
+        /UNSUPPORTED|Google Play services|not available|not supported|module install|unimplemented/i.test(message);
+      if (unsupported) {
+        toast.warning("الماسح الأصلي غير مدعوم على هذا الجهاز حاليًا؛ سيتم فتح ماسح الويب.");
         openWebCamera();
       } else {
-        toast.error(error instanceof Error ? error.message : "تعذّر تشغيل الماسح الأصلي");
+        toast.error(message);
       }
     } finally {
       setBusy(null);
