@@ -5,6 +5,9 @@ import { buildSignedPdf, placementToDrawOptions, type Placement } from "./sign-p
 const ONE_PIXEL_PNG =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9ZQmcAAAAASUVORK5CYII=";
 
+const ONE_PIXEL_JPEG =
+  "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////2wBDAf//////////////////////////////////////////////////////////////////////////////////////wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAX/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAF//8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABBQJ//8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAgBAwEBPwF//8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAgBAgEBPwF//8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQAGPwJ//8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPyF//9oADAMBAAIAAwAAABD/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oACAEDAQE/EB//xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oACAECAQE/EB//xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oACAEBAAE/EB//2Q==";
+
 async function makePdf(pageCount = 1) {
   const doc = await PDFDocument.create();
   for (let i = 0; i < pageCount; i += 1) {
@@ -161,6 +164,41 @@ describe("buildSignedPdf", () => {
     const reopened = await PDFDocument.load(result);
 
     expect(reopened.getPageCount()).toBe(40);
+  });
+
+  it("embeds JPEG signatures as a readable PDF", async () => {
+    const source = await makePdf(1);
+    const placement: Placement = {
+      id: "jpeg-signature",
+      page: 1,
+      xPct: 0.2,
+      yPct: 0.2,
+      wPct: 0.2,
+      hPct: 0.08,
+      image: ONE_PIXEL_JPEG,
+    };
+
+    const result = await buildSignedPdf(source, [placement]);
+    const reopened = await PDFDocument.load(result);
+
+    expect(reopened.getPageCount()).toBe(1);
+  });
+
+  it("rejects an invalid signature data URL", async () => {
+    const source = await makePdf(1);
+    const placement: Placement = {
+      id: "bad-signature",
+      page: 1,
+      xPct: 0.2,
+      yPct: 0.2,
+      wPct: 0.2,
+      hPct: 0.08,
+      image: "not-a-data-url",
+    };
+
+    await expect(buildSignedPdf(source, [placement])).rejects.toThrow(
+      "صورة التوقيع غير صالحة",
+    );
   });
 
   it("returns the user-facing error for malformed PDF input", async () => {
