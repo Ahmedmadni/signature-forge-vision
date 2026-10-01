@@ -70,11 +70,12 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
+      # ubuntu-latest has the Android command-line SDK installed already.
+      # Avoid setup-android@v3 installing the removed legacy "tools" package.
       - name: Install Android API 36 tools
-        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+        run: |
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager "platforms;android-36" "build-tools;36.0.0"
 
       - name: Assemble Android debug APK
         run: |
