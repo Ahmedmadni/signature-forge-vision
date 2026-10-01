@@ -48,6 +48,7 @@ import { saveFile } from "@/lib/save-file";
 import { setPendingFile } from "@/lib/pending-file";
 import { toast } from "sonner";
 import { playSfx, haptic } from "@/lib/sfx";
+import { moveItem, nextQuarterTurn } from "@/lib/scan-page-order";
 
 export const Route = createFileRoute("/_authenticated/scan")({
   ssr: false,
@@ -281,7 +282,7 @@ function ScanPage() {
   };
 
   const rotatePage = (page: Page) => {
-    const rotation = (((page.rotation + 90) % 360) as 0 | 90 | 180 | 270);
+    const rotation = nextQuarterTurn(page.rotation);
     const canvas = drawPage({
       image: page.source,
       width: page.sourceWidth,
@@ -301,13 +302,7 @@ function ScanPage() {
   };
 
   const movePage = (index: number, direction: -1 | 1) => {
-    setPages((current) => {
-      const target = index + direction;
-      if (target < 0 || target >= current.length) return current;
-      const next = [...current];
-      [next[index], next[target]] = [next[target], next[index]];
-      return next;
-    });
+    setPages((current) => moveItem(current, index, direction));
   };
 
   const makePdf = async () => {
