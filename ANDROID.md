@@ -18,7 +18,7 @@
 - Android Studio (Ladybug أو أحدث) مع:
   - Android SDK Platform 36
   - Android SDK Build-Tools 36
-  - JDK 17 (المدمج مع Android Studio)
+  - JDK 21 (مطلوب لتجميع إضافة ML Kit الحالية)
 
 ---
 
@@ -186,6 +186,9 @@ bun run android:sync
 ---
 
 ## 8) الماسح الأصلي ML Kit (N01)
+
+> **مهم للبناء:** إصدار `@capacitor-mlkit/document-scanner@8.2.1` يستخدم Java source/target 21. اختر JDK 21 في Android Studio (Gradle JDK) وعلى GitHub Actions.
+
 
 أُضيفت الإضافة `@capacitor-mlkit/document-scanner@8.2.1` لإظهار واجهة مسح أصلية على أجهزة Android التي تدعم Google Play Services.
 
