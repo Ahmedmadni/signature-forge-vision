@@ -16,7 +16,8 @@
 - معالجة الملف محليًا على الجهاز قدر الإمكان أثناء مسار التوقيع الأساسي.
 
 ### Scanner متعدد الصفحات
-- التقاط عدة صفحات بالكاميرا في جلسة واحدة.
+- داخل APK Android الجديد: Google ML Kit Native Document Scanner مع كشف حدود أصلي، قص وتسوية وتصوير صفحات متعددة، ثم استيراد الصور المعالجة مباشرة دون قص ثانٍ. **يلزم Android build جديد واختبار هاتف حقيقي.**
+- داخل الويب أو APK قديم: التقاط عدة صفحات بكاميرا المتصفح في جلسة واحدة.
 - استيراد عدة صور من المعرض.
 - اكتشاف حدود المستند آليًا باستخدام Sobel/Hough + quadrilateral scoring.
 - Edge snapping والتحقق من contrast والثبات الزمني.
@@ -89,6 +90,8 @@ com.ahmedelmadni.waqqi
 | `src/lib/document-refine.ts` | Edge snapping |
 | `src/lib/live-scan.ts` | الثقة والثبات |
 | `src/lib/scan.ts` | Perspective correction والفلاتر وPDF |
+| `src/lib/native-document-scanner.ts` | جسر Google ML Kit Android وقراءة الصور الأصلية |
+| `src/lib/native-document-scanner.test.ts` | اختبارات المسح الأصلي |
 | `src/lib/scan-settings.ts` | إعدادات جودة وأحجام المسح |
 | `src/routes/_authenticated/scan.tsx` | Scanner workflow |
 | `src/components/app/PdfSignWorkspace.tsx` | مساحة توقيع PDF |
@@ -169,7 +172,7 @@ npm run android:sync
 Camera Stream → hidden video → Canvas Preview
 ```
 
-وذلك لمعالجة مشكلة Black Video Surface على بعض Android WebViews. إذا استمرت الشاشة السوداء على جهاز حقيقي بعد هذا المسار، فالاتجاه التالي هو Native Camera Preview / Capacitor Camera بدل المزيد من تعديلات CSS.
+وذلك لمعالجة مشكلة Black Video Surface على بعض Android WebViews. على Android تم الآن إدخال مسار ML Kit أصلي خارج WebView لتجنب الاعتماد على هذه المعاينة، بينما يبقى المسار الحالي للويب والأجهزة التي لا تتوافر فيها الإضافة. راجع `ANDROID.md` لبناء APK جديد وتجربة المسار الأصلي؛ نجاح بناء الويب وحده لا يؤكد تشغيل الماسح على هاتف حقيقي.
 
 ## الروابط
 
