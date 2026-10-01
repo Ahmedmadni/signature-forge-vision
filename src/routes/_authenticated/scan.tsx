@@ -21,12 +21,20 @@ import { ScanCropper } from "@/components/app/ScanCropper";
 import {
   buildScannedPdf,
   defaultQuad,
+  fullImageQuad,
   loadImage,
   renderPage,
+  renderProcessedPage,
   type Quad,
   type ScanFilter,
 } from "@/lib/scan";
 import { detectDocumentRefined } from "@/lib/document-refine";
+import {
+  canUseNativeScanner,
+  isAndroidNativeApp,
+  NativeScannerUnavailableError,
+  scanNativeDocuments,
+} from "@/lib/native-document-scanner";
 import {
   getScanSettings,
   PAGE_SIZE_PT,
@@ -57,6 +65,7 @@ export const Route = createFileRoute("/_authenticated/scan")({
 
 interface Draft {
   pageId?: string;
+  nativeProcessed: boolean;
   image: CanvasImageSource;
   width: number;
   height: number;
@@ -67,6 +76,7 @@ interface Draft {
 
 interface Page {
   id: string;
+  nativeProcessed: boolean;
   canvas: HTMLCanvasElement;
   preview: string;
   source: CanvasImageSource;
@@ -83,6 +93,35 @@ const filters: { key: ScanFilter; label: string }[] = [
   { key: "bw", label: "أبيض وأسود" },
 ];
 
+/** Respect already corrected ML Kit output unless the user changes its crop/filter. */
+function drawPage(draft: Draft): HTMLCanvasElement {
+  const maxSize = QUALITY_MAX_PX[getScanSettings().quality];
+  const full = fullImageQuad(draft.width, draft.height);
+  const unchangedCorners = draft.quad.every(
+    (point, i) =>
+      Math.abs(point.x - full[i].x) < 1 &&
+      Math.abs(point.y - full[i].y) < 1,
+  );
+  if (draft.nativeProcessed && draft.filter === "color" && unchangedCorners) {
+    return renderProcessedPage(
+      draft.image,
+      draft.width,
+      draft.height,
+      draft.rotation,
+      maxSize,
+    );
+  }
+  return renderPage(
+    draft.image,
+    draft.width,
+    draft.height,
+    draft.quad,
+    draft.filter,
+    draft.rotation,
+    maxSize,
+  );
+}
+
 function ScanPage() {
   const navigate = useNavigate();
   const settings = useScanSettings();
@@ -92,8 +131,9 @@ function ScanPage() {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [pages, setPages] = useState<Page[]>([]);
   const [saving, setSaving] = useState(false);
+  const [nativeBusy, setNativeBusy] = useState(false);
 
-  const processBlob = useCallback(async (blob: Blob, cameraQuad?: Quad) => {
+  const processBlob = useCallback(async (blob: Blob, cameraQuad?: Quad, nativeProcessed = false) => {
     setBusy("جارٍ اكتشاف حدود الصفحة وتحسينها…");
     try {
       const img = await loadImage(blob);
@@ -101,21 +141,27 @@ function ScanPage() {
       const height = "height" in img ? Number(img.height) : 0;
       if (!width || !height) throw new Error("invalid-image");
 
-      const detection = cameraQuad ? null : detectDocumentRefined(img as CanvasImageSource, width, height);
-      const quad = cameraQuad ?? detection?.quad ?? defaultQuad(width, height);
-      const filter: ScanFilter = "enhanced";
+      const detection =
+        cameraQuad || nativeProcessed
+          ? null
+          : detectDocumentRefined(img as CanvasImageSource, width, height);
+      const quad = nativeProcessed
+        ? fullImageQuad(width, height)
+        : cameraQuad ?? detection?.quad ?? defaultQuad(width, height);
+      const filter: ScanFilter = nativeProcessed ? "color" : "enhanced";
       const rotation = 0 as const;
-      const canvas = renderPage(
-        img as CanvasImageSource,
+      const canvas = drawPage({
+        image: img as CanvasImageSource,
         width,
         height,
         quad,
         filter,
         rotation,
-        QUALITY_MAX_PX[getScanSettings().quality],
-      );
+        nativeProcessed,
+      });
       const page: Page = {
         id: crypto.randomUUID(),
+        nativeProcessed,
         canvas,
         preview: canvas.toDataURL("image/jpeg", 0.72),
         source: img as CanvasImageSource,
@@ -129,7 +175,7 @@ function ScanPage() {
       setPages((current) => [...current, page]);
       playSfx("success");
       haptic();
-      if (!cameraQuad && !detection) {
+      if (!nativeProcessed && !cameraQuad && !detection) {
         toast.warning("لم يتم تأكيد الحواف الأربع بدقة. راجع حدود هذه الصفحة من زر التعديل.");
       }
       return page;
@@ -141,9 +187,53 @@ function ScanPage() {
     }
   }, []);
 
+  const openWebCamera = useCallback(() => {
+    setCamera(true);
+  }, []);
+
+  const startScan = async () => {
+    if (nativeBusy) return;
+    if (!isAndroidNativeApp()) {
+      openWebCamera();
+      return;
+    }
+    if (!canUseNativeScanner()) {
+      toast.warning("الإصدار المثبت لا يحتوي الماسح الأصلي بعد. أنشئ APK جديدًا بعد مزامنة Capacitor.");
+      openWebCamera();
+      return;
+    }
+
+    setNativeBusy(true);
+    try {
+      const images = await scanNativeDocuments(setBusy);
+      if (!images?.length) return;
+      let imported = 0;
+      for (const blob of images) {
+        const page = await processBlob(blob, undefined, true);
+        if (!page) break;
+        imported++;
+      }
+      if (imported > 0) toast.success(`أُضيفت ${imported} صفحة من الماسح الأصلي`);
+      if (imported < images.length) {
+        toast.warning("تعذّرت معالجة بعض الصفحات؛ الصفحات التي نجحت محفوظة في القائمة.");
+      }
+    } catch (error) {
+      if (error instanceof NativeScannerUnavailableError) {
+        toast.warning(error.message);
+        openWebCamera();
+      } else {
+        toast.error(error instanceof Error ? error.message : "تعذّر تشغيل الماسح الأصلي");
+      }
+    } finally {
+      setBusy(null);
+      setNativeBusy(false);
+    }
+  };
+
   const openEditor = (page: Page) => {
     setDraft({
       pageId: page.id,
+      nativeProcessed: page.nativeProcessed,
       image: page.source,
       width: page.sourceWidth,
       height: page.sourceHeight,
@@ -158,17 +248,10 @@ function ScanPage() {
     setBusy("جارٍ تحديث الصفحة…");
     try {
       await new Promise((resolve) => setTimeout(resolve, 20));
-      const canvas = renderPage(
-        draft.image,
-        draft.width,
-        draft.height,
-        draft.quad,
-        draft.filter,
-        draft.rotation,
-        QUALITY_MAX_PX[getScanSettings().quality],
-      );
+      const canvas = drawPage(draft);
       const next: Page = {
         id: draft.pageId ?? crypto.randomUUID(),
+        nativeProcessed: draft.nativeProcessed,
         canvas,
         preview: canvas.toDataURL("image/jpeg", 0.72),
         source: draft.image,
@@ -195,15 +278,15 @@ function ScanPage() {
 
   const rotatePage = (page: Page) => {
     const rotation = (((page.rotation + 90) % 360) as 0 | 90 | 180 | 270);
-    const canvas = renderPage(
-      page.source,
-      page.sourceWidth,
-      page.sourceHeight,
-      page.quad,
-      page.filter,
+    const canvas = drawPage({
+      image: page.source,
+      width: page.sourceWidth,
+      height: page.sourceHeight,
+      quad: page.quad,
+      filter: page.filter,
       rotation,
-      QUALITY_MAX_PX[getScanSettings().quality],
-    );
+      nativeProcessed: page.nativeProcessed,
+    });
     setPages((current) =>
       current.map((item) =>
         item.id === page.id
@@ -395,15 +478,18 @@ function ScanPage() {
           onClick={() => {
             playSfx("tap");
             haptic();
-            setCamera(true);
+            void startScan();
           }}
+          disabled={nativeBusy}
           className="press sheen flex flex-col items-center gap-2 rounded-3xl border border-dashed border-primary/40 bg-gradient-to-b from-primary/10 to-transparent px-4 py-8 hover:border-primary hover:shadow-glow"
         >
           <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-brand shadow-glow">
             <Camera className="h-5 w-5 text-primary-foreground" />
           </div>
           <span className="font-display text-sm font-semibold">مسح بالكاميرا</span>
-          <span className="text-[11px] text-muted-foreground">عدة صفحات في نفس الجلسة</span>
+          <span className="text-[11px] text-muted-foreground">
+            {isAndroidNativeApp() ? "ماسح Google الأصلي · عدة صفحات" : "عدة صفحات في نفس الجلسة"}
+          </span>
         </button>
 
         <button
@@ -439,7 +525,7 @@ function ScanPage() {
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold">الصفحات ({pages.length})</h2>
-            <Button variant="outline" size="sm" onClick={() => setCamera(true)}>
+            <Button variant="outline" size="sm" disabled={nativeBusy} onClick={() => void startScan()}>
               <Camera className="h-4 w-4" /> إضافة صفحات
             </Button>
           </div>
