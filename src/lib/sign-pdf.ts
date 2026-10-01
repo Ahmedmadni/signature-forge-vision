@@ -1,5 +1,3 @@
-import { degrees, type Rotation } from "pdf-lib";
-
 export interface Placement {
   id: string;
   page: number; // 1-based
@@ -22,7 +20,7 @@ export interface PlacementDrawOptions {
   y: number;
   width: number;
   height: number;
-  rotate: Rotation;
+  rotation: 0 | 90 | 180 | 270;
 }
 
 function normalizeRightAngle(angle: number): 0 | 90 | 180 | 270 {
@@ -69,7 +67,7 @@ export function placementToDrawOptions(
     y: cropBox.y + localY,
     width,
     height,
-    rotate: degrees(rotation),
+    rotation,
   };
 }
 
@@ -89,7 +87,7 @@ export async function buildSignedPdf(
   source: ArrayBuffer | Uint8Array,
   placements: Placement[],
 ): Promise<Uint8Array> {
-  const { PDFDocument } = await import("pdf-lib");
+  const { degrees, PDFDocument } = await import("pdf-lib");
 
   let pdfDoc;
   try {
@@ -120,7 +118,13 @@ export async function buildSignedPdf(
       cropBox,
       page.getRotation().angle,
     );
-    page.drawImage(img, options);
+    page.drawImage(img, {
+      x: options.x,
+      y: options.y,
+      width: options.width,
+      height: options.height,
+      rotate: degrees(options.rotation),
+    });
   }
 
   return pdfDoc.save();
