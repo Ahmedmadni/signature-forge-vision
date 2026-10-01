@@ -37,7 +37,7 @@ describe("buildSignedPdf", () => {
 
     expect(placementToDrawOptions(placement, cropBox, 180)).toMatchObject({
       x: 550,
-      y: 180,
+      y: 260,
       width: 180,
       height: 80,
       rotation: 180,
