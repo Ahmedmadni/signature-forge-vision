@@ -9,7 +9,7 @@ import {
   GoogleDocumentScannerModuleInstallState,
 } from "@capacitor-mlkit/document-scanner";
 
-const MAX_PAGES_PER_SESSION = 20;
+const MAX_PAGES_PER_SESSION = 10;
 
 export class NativeScannerUnavailableError extends Error {
   constructor(message: string) {
@@ -28,6 +28,11 @@ export function canUseNativeScanner(): boolean {
 
 function isCancelled(error: unknown): boolean {
   const detail = error instanceof Error ? error.message : String(error);
+  // Google's plugin message contains "cancelled or failed" for all result codes.
+  // Only Android RESULT_CANCELED (0) is a user cancellation.
+  if (/Scan cancelled or failed\. Result code:/i.test(detail)) {
+    return /Result code:\s*0\b/.test(detail);
+  }
   return /cancelled|canceled|user.cancel|activity.result.canceled/i.test(detail);
 }
 
@@ -73,6 +78,8 @@ async function ensureScannerModule(onStatus?: (status: string) => void): Promise
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (!/already installed/i.test(message)) throw error;
+      // The module can become available between the first check and install.
+      return;
     }
     const timedOut = new Promise<boolean>((resolve) => {
       timeoutId = setTimeout(() => resolve(false), 90000);
