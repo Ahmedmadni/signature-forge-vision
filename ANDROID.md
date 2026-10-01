@@ -182,3 +182,44 @@ bun run android:sync
 | فشل Gradle Sync | `File > Invalidate Caches / Restart` ثم أعد المزامنة |
 | شاشة بيضاء عند التشغيل | تحقق من الاتصال بالإنترنت ومن صحة `server.url` |
 | تغييرات الواجهة لا تظهر | نفّذ `bun run android:sync` ثم أعد البناء |
+
+---
+
+## 8) الماسح الأصلي ML Kit (N01)
+
+أُضيفت الإضافة `@capacitor-mlkit/document-scanner@8.2.1` لإظهار واجهة مسح أصلية على أجهزة Android التي تدعم Google Play Services.
+
+**يجب إنشاء APK جديد.** تحديث موقع Lovable وحده لا يثبت Java/Android plugin في APK قديم.
+
+```bash
+npm install
+npm run typecheck
+npm run test
+npm run build
+npm run android:sync
+npx cap open android
+```
+
+من Android Studio اختر Build APK(s) وثبّت **الإصدار الجديد** على هاتف حقيقي، واسمح لخدمات Google Play بتنزيل مكوّن Document Scanner أول مرة (قد يتطلب اتصالًا بالإنترنت). Android minSdk 24 ملائم لمتطلبات الإضافة.
+
+عند ضغط «مسح بالكاميرا» داخل APK المحدّث: تُفتح واجهة Google ML Kit الأصلية، وتُستقبل الصور بصيغة JPEG جاهزة (قص، تقويم، ترتيب)، ثم تُضاف بالترتيب إلى صفحة المسح دون إعادة قصّها. تستمر وظائف **حفظ PDF** و**التوقيع الآن** و**تدوير/ترتيب/حذف الصفحات**.
+
+في المتصفح أو APK قديم بلا Native plugin: يستمر الماسح الموجود كخيار احتياطي. عند إلغاء المسح الأصلي لا تُضاف صفحات.
+
+### فحص قبول N01 على جهاز حقيقي
+
+- [ ] تثبيت APK جديد بعد `android:sync`.
+- [ ] فتح الواجهة الأصلية من زر «مسح بالكاميرا».
+- [ ] مسح 5 صفحات وحفظ ترتيبها وجودة حوافها.
+- [ ] الإلغاء ثم إعادة المسح بنجاح دون شاشة سوداء.
+- [ ] إدخال صور من المعرض داخل Google Scanner.
+- [ ] حفظ PDF وإعادة فتحه بقارئ خارجي.
+- [ ] Scan → Sign → Save.
+- [ ] اختبار جهاز دون Google Play Services والتأكد من عرض مسار احتياطي واضح.
+
+### ملاحظتان معماريتان
+
+1. يحتوي `capacitor.config.ts` على `server.url` يشير إلى موقع Lovable؛ لذلك التطبيق الحالي **يحتاج اتصالًا بالإنترنت** لفتح الواجهة، ولا تُستبدل الإضافة المثبتة في APK بمجرد تحديث الموقع. يُرجى تقييم تغليف أصول التطبيق محليًا قبل الإنتاج النهائي مع اختبار اتصال Supabase/SSR.
+2. يعمل هذا المسار على Android فقط. في الويب وiOS (مستقبلًا) يبقى مسار الويب، أو يُنفذ بديل Native مناسب للمنصة.
+
+**ملفات N01:** `src/lib/native-document-scanner.ts`، `src/lib/native-document-scanner.test.ts`، `src/routes/_authenticated/scan.tsx`، `src/lib/scan.ts`.
