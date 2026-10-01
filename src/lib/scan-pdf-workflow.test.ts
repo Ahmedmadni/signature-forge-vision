@@ -42,6 +42,37 @@ describe("multi-page scan PDF workflow", () => {
     expect(height).toBeCloseTo(841.89, 2);
   });
 
+  it("rotates a fixed page size for landscape scans", async () => {
+    const landscapeCanvas = {
+      toBlob(callback: BlobCallback) {
+        callback(jpegBlob());
+      },
+      width: 1600,
+      height: 900,
+    } as unknown as HTMLCanvasElement;
+
+    const bytes = await buildScannedPdf([landscapeCanvas], {
+      pageSizePt: [595.28, 841.89],
+    });
+    const pdf = await PDFDocument.load(bytes);
+    const { width, height } = pdf.getPage(0).getSize();
+
+    expect(width).toBeCloseTo(595.28, 2);
+    expect(height).toBeCloseTo(841.89, 2);
+  });
+
+  it("rejects when a scanned canvas cannot produce a JPEG blob", async () => {
+    const brokenCanvas = {
+      toBlob(callback: BlobCallback) {
+        callback(null);
+      },
+    } as unknown as HTMLCanvasElement;
+
+    await expect(buildScannedPdf([brokenCanvas])).rejects.toThrow(
+      "تعذّر إنشاء الصورة",
+    );
+  });
+
   it("supports Scan → Sign → Save as one readable multi-page PDF", async () => {
     const scanned = await buildScannedPdf([fakeCanvas(), fakeCanvas()]);
     const placement: Placement = {
