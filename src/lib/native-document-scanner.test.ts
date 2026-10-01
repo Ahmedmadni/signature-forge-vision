@@ -56,6 +56,7 @@ describe("Android ML Kit scanner bridge", () => {
     platform.pluginAvailable = true;
     native.moduleAvailable.mockResolvedValue({ available: true });
     native.scanDocument.mockResolvedValue({ scannedImages: [] });
+    native.addListener.mockResolvedValue({ remove: vi.fn() });
   });
 
   it("only enables the plugin inside an Android native shell", () => {
@@ -99,6 +100,47 @@ describe("Android ML Kit scanner bridge", () => {
   it("reports native failures instead of silently treating them as cancellations", async () => {
     native.scanDocument.mockRejectedValue(new Error("Scan cancelled or failed. Result code: 1"));
     await expect(scanNativeDocuments()).rejects.toThrow("Result code: 1");
+  });
+
+  it("installs the Google scanner module before opening the scanner when needed", async () => {
+    const remove = vi.fn();
+    let progressListener: ((event: { state: number; progress?: number }) => void) | undefined;
+    native.moduleAvailable
+      .mockResolvedValueOnce({ available: false })
+      .mockResolvedValueOnce({ available: true });
+    native.addListener.mockImplementation(async (_event: string, listener: typeof progressListener) => {
+      progressListener = listener;
+      return { remove };
+    });
+    native.install.mockImplementation(async () => {
+      progressListener?.({ state: 4, progress: 100 });
+    });
+
+    const statuses: string[] = [];
+    await expect(scanNativeDocuments((status) => statuses.push(status))).resolves.toBeNull();
+
+    expect(native.install).toHaveBeenCalledTimes(1);
+    expect(native.scanDocument).toHaveBeenCalledTimes(1);
+    expect(statuses.some((status) => status.includes("تنزيل محرك المسح"))).toBe(true);
+    expect(statuses.some((status) => status.includes("100%"))).toBe(true);
+    expect(remove).toHaveBeenCalledTimes(1);
+  });
+
+  it("fails clearly when the Google scanner module cannot be installed", async () => {
+    const remove = vi.fn();
+    let progressListener: ((event: { state: number; progress?: number }) => void) | undefined;
+    native.moduleAvailable.mockResolvedValue({ available: false });
+    native.addListener.mockImplementation(async (_event: string, listener: typeof progressListener) => {
+      progressListener = listener;
+      return { remove };
+    });
+    native.install.mockImplementation(async () => {
+      progressListener?.({ state: 5 });
+    });
+
+    await expect(scanNativeDocuments()).rejects.toBeInstanceOf(NativeScannerUnavailableError);
+    expect(native.scanDocument).not.toHaveBeenCalled();
+    expect(remove).toHaveBeenCalledTimes(1);
   });
 
   it("requires a newly built APK when native plugin is absent", async () => {
