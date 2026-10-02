@@ -97,6 +97,13 @@ function AuthPage() {
           <span className="font-display text-xl font-semibold">وقِّع</span>
         </Link>
 
+        <div className="mb-4 rounded-xl border border-border bg-muted/40 p-3 text-center">
+          <p className="text-xs text-muted-foreground">يمكنك استخدام التطبيق بالكامل كضيف. تسجيل الدخول اختياري.</p>
+          <Button asChild variant="outline" size="sm" className="mt-2 w-full">
+            <Link to="/home">الدخول للتطبيق بدون حساب</Link>
+          </Button>
+        </div>
+
         <h1 className="font-display text-2xl font-semibold tracking-tight">
           {mode === "signin" ? "مرحبًا بعودتك" : "أنشئ حسابك"}
         </h1>
