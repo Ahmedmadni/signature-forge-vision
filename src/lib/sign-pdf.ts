@@ -92,8 +92,12 @@ export async function buildSignedPdf(
   let pdfDoc;
   try {
     pdfDoc = await PDFDocument.load(source);
-  } catch {
-    throw new Error("تعذّر قراءة ملف PDF (قد يكون تالفًا أو محميًا بكلمة مرور)");
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (/encrypted/i.test(message)) {
+      throw new Error("لا يمكن توقيع ملف PDF مشفّر أو محمي. أزل الحماية ثم أعد فتح الملف.");
+    }
+    throw new Error("تعذّر قراءة ملف PDF (قد يكون تالفًا أو غير مدعوم)");
   }
   const pages = pdfDoc.getPages();
 
