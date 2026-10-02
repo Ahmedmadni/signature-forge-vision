@@ -48,6 +48,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: quality
+    env:
+      WAQQI_VERSION_CODE: ${{ github.run_number }}
+      WAQQI_VERSION_NAME: 1.0.${{ github.run_number }}-ci
     steps:
       - name: Checkout
         uses: actions/checkout@v4
