@@ -212,18 +212,19 @@ function ScanPage() {
     setNativeScannerIssue(null);
     setNativeBusy(true);
     try {
-      const images = await scanNativeDocuments(setBusy);
-      if (!images?.length) return;
       let imported = 0;
-      for (const blob of images) {
+      const received = await scanNativeDocuments(setBusy, async (blob, index, total) => {
+        setBusy(`جارٍ تجهيز الصفحة ${index + 1} من ${total}…`);
         const page = await processBlob(blob, undefined, true);
-        if (!page) break;
+        if (!page) {
+          throw new Error(`تعذّرت معالجة الصفحة ${index + 1}. الصفحات السابقة محفوظة.`);
+        }
         imported++;
-      }
+        // Yield between expensive perspective/PDF previews to keep Android responsive.
+        await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
+      });
+      if (received === null) return;
       if (imported > 0) toast.success(`أُضيفت ${imported} صفحة من الماسح الأصلي`);
-      if (imported < images.length) {
-        toast.warning("تعذّرت معالجة بعض الصفحات؛ الصفحات التي نجحت محفوظة في القائمة.");
-      }
     } catch (error) {
       const message = error instanceof Error ? error.message : "تعذّر تشغيل الماسح الأصلي";
       const unsupported =
