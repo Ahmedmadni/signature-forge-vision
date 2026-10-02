@@ -108,9 +108,17 @@ async function ensureScannerModule(onStatus?: (status: string) => void): Promise
  * The native scanner already deskews, crops, applies user-selected enhancements,
  * and returns pages in their chosen order.
  */
+export function scanNativeDocuments(
+  onStatus?: (status: string) => void,
+): Promise<Blob[] | null>;
+export function scanNativeDocuments(
+  onStatus: ((status: string) => void) | undefined,
+  onPage: (page: Blob, index: number, total: number) => Promise<void>,
+): Promise<number | null>;
 export async function scanNativeDocuments(
   onStatus?: (status: string) => void,
-): Promise<Blob[] | null> {
+  onPage?: (page: Blob, index: number, total: number) => Promise<void>,
+): Promise<Blob[] | number | null> {
   if (!canUseNativeScanner()) {
     throw new NativeScannerUnavailableError(
       "الماسح الأصلي غير متوفر في نسخة التطبيق الحالية. يلزم إصدار APK يحتوي الإضافة.",
@@ -144,7 +152,14 @@ export async function scanNativeDocuments(
     if (typeof data !== "string") {
       throw new Error("تعذّرت قراءة بيانات الصفحة من النظام.");
     }
-    blobs.push(base64ToJpegBlob(data));
+    const blob = base64ToJpegBlob(data);
+    if (onPage) {
+      // Import immediately and release the transient base64/JPEG references
+      // instead of keeping 10 full-resolution blobs in memory together.
+      await onPage(blob, index, uris.length);
+    } else {
+      blobs.push(blob);
+    }
   }
-  return blobs;
+  return onPage ? uris.length : blobs;
 }
