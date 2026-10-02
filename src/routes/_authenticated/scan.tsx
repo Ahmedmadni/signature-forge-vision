@@ -31,7 +31,7 @@ import {
 import { detectDocumentRefined } from "@/lib/document-refine";
 import {
   canUseNativeScanner,
-  isAndroidNativeApp,
+  isPackagedAndroidApp,
   NativeScannerUnavailableError,
   scanNativeDocuments,
 } from "@/lib/native-document-scanner";
@@ -198,13 +198,13 @@ function ScanPage() {
 
   const startScan = async () => {
     if (nativeBusy) return;
-    if (!isAndroidNativeApp()) {
+    if (!isPackagedAndroidApp()) {
       openWebCamera();
       return;
     }
     if (!canUseNativeScanner()) {
       setNativeScannerIssue(
-        "واجهة Google ML Kit الأصلية غير متاحة في نسخة التطبيق هذه. حدّث APK أولًا؛ ويمكنك فتح ماسح الويب يدويًا عند الحاجة.",
+        "اتصال Android الأصلي غير متاح حاليًا. تأكد من استخدام أحدث APK ومن خدمات Google Play؛ يمكن اختيار ماسح الويب يدويًا عند الحاجة.",
       );
       return;
     }
@@ -495,7 +495,7 @@ function ScanPage() {
           </div>
           <span className="font-display text-sm font-semibold">مسح بالكاميرا</span>
           <span className="text-[11px] text-muted-foreground">
-            {isAndroidNativeApp() ? "ماسح Google الأصلي · عدة صفحات" : "عدة صفحات في نفس الجلسة"}
+            {isPackagedAndroidApp() ? "ماسح Google الأصلي · عدة صفحات" : "عدة صفحات في نفس الجلسة"}
           </span>
         </button>
 
