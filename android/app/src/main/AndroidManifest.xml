@@ -31,6 +31,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Return Google OAuth from the system browser to this Android app. -->
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="com.ahmedelmadni.waqqi"
+                      android:host="auth"
+                      android:pathPrefix="/callback" />
+            </intent-filter>
+
         </activity>
 
         <provider
