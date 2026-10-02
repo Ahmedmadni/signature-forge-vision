@@ -24,7 +24,8 @@ export function ScanCropper({ image, imageWidth, imageHeight, quad, onChange }: 
 
     const update = () => {
       const availableWidth = Math.max(1, el.clientWidth);
-      const maxHeight = Math.min(window.innerHeight * 0.62, 760);
+      // Leave room for review header, editing actions and Android system bars.
+      const maxHeight = Math.min(window.innerHeight * 0.46, 580);
       let w = availableWidth;
       let h = w / ratio;
 
@@ -106,7 +107,7 @@ export function ScanCropper({ image, imageWidth, imageHeight, quad, onChange }: 
   return (
     <div
       ref={wrapRef}
-      className="relative flex w-full touch-none justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg"
+      className="relative flex w-full min-w-0 touch-none justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg"
       style={{ height: box.h }}
       onPointerMove={move}
       onPointerUp={() => (dragRef.current = null)}
