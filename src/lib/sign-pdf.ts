@@ -82,6 +82,14 @@ function dataUrlToBytes(dataUrl: string): Uint8Array {
   return bytes;
 }
 
+function toPdfReadError(error: unknown): Error {
+  const message = error instanceof Error ? error.message : String(error);
+  if (/encrypted/i.test(message)) {
+    return new Error("لا يمكن توقيع ملف PDF مشفّر أو محمي. أزل الحماية ثم أعد فتح الملف.");
+  }
+  return new Error("تعذّر قراءة ملف PDF (قد يكون تالفًا أو غير مدعوم)");
+}
+
 /** يدمج التوقيعات داخل ملف PDF ويعيد البايتات الناتجة. */
 export async function buildSignedPdf(
   source: ArrayBuffer | Uint8Array,
@@ -90,16 +98,13 @@ export async function buildSignedPdf(
   const { degrees, PDFDocument } = await import("pdf-lib");
 
   let pdfDoc;
+  let pages;
   try {
     pdfDoc = await PDFDocument.load(source);
+    pages = pdfDoc.getPages();
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    if (/encrypted/i.test(message)) {
-      throw new Error("لا يمكن توقيع ملف PDF مشفّر أو محمي. أزل الحماية ثم أعد فتح الملف.");
-    }
-    throw new Error("تعذّر قراءة ملف PDF (قد يكون تالفًا أو غير مدعوم)");
+    throw toPdfReadError(error);
   }
-  const pages = pdfDoc.getPages();
 
   const cache = new Map<string, unknown>();
   const embed = async (dataUrl: string) => {
