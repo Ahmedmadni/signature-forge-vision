@@ -514,6 +514,35 @@ function ScanPage() {
         </button>
       </div>
 
+      {isPackagedAndroidApp() && (
+        <div className="space-y-2 rounded-2xl border border-border bg-card/70 p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+            <span className="font-medium">حالة محرك المسح الأصلي</span>
+            <span className={canUseNativeScanner() ? "font-semibold text-emerald-600" : "font-semibold text-amber-600"}>
+              {canUseNativeScanner() ? "متصل — Google ML Kit" : "غير متصل بجسر Android"}
+            </span>
+          </div>
+          <p className="text-[11px] leading-relaxed text-muted-foreground">
+            ماسح Google يحدد الحواف ويختار توقيت الالتقاط بنفسه. لو عايز تتحكم في لحظة التصوير،
+            استخدم الوضع اليدوي بدل الالتقاط التلقائي.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="w-full"
+            disabled={nativeBusy}
+            onClick={() => {
+              setNativeScannerIssue(null);
+              openWebCamera();
+            }}
+          >
+            <Camera className="h-4 w-4" />
+            تصوير يدوي — بدون التقاط تلقائي
+          </Button>
+        </div>
+      )}
+
       {nativeScannerIssue && (
         <div role="alert" className="space-y-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
           <p>{nativeScannerIssue}</p>
