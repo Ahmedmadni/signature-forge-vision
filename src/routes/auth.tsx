@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
+import { isAndroidNativeAuth, NATIVE_AUTH_REDIRECT, startNativeGoogleSignIn } from "@/lib/native-auth";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({ meta: [{ title: "تسجيل الدخول — وقِّع" }] }),
@@ -33,13 +34,20 @@ function AuthPage() {
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email, password,
-          options: { emailRedirectTo: window.location.origin, data: { display_name: name } },
+          options: {
+            emailRedirectTo: isAndroidNativeAuth() ? NATIVE_AUTH_REDIRECT : window.location.origin,
+            data: { display_name: name },
+          },
         });
         if (error) throw error;
-        toast.success("تم إنشاء الحساب — مرحبًا بك في وقِّع!");
-        navigate({ to: "/home" });
+        if (!data.session) {
+          toast.success("تم إنشاء الحساب. تحقق من بريدك لتفعيل الحساب ثم عُد للتطبيق.");
+        } else {
+          toast.success("تم إنشاء الحساب — مرحبًا بك في وقِّع!");
+          navigate({ to: "/home" });
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -54,10 +62,24 @@ function AuthPage() {
   };
 
   const google = async () => {
-    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
-    if (result.error) { toast.error("فشل تسجيل الدخول عبر جوجل"); return; }
-    if (result.redirected) return;
-    navigate({ to: "/home" });
+    if (loading) return;
+    setLoading(true);
+    try {
+      if (isAndroidNativeAuth()) {
+        await startNativeGoogleSignIn();
+        // Browser opens Google's authentication page; appUrlOpen completes the PKCE exchange.
+        return;
+      }
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+      });
+      if (result.error) throw result.error;
+      if (!result.redirected) navigate({ to: "/home" });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "تعذّر تسجيل الدخول بجوجل");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -82,7 +104,7 @@ function AuthPage() {
           {mode === "signin" ? "سجّل الدخول إلى تطبيق وقِّع." : "ابدأ توقيع المستندات في ثوانٍ."}
         </p>
 
-        <Button variant="outline" onClick={google} className="mt-6 w-full" type="button">
+        <Button variant="outline" disabled={loading} onClick={() => void google()} className="mt-6 w-full" type="button">
           <svg className="h-4 w-4" viewBox="0 0 24 24"><path fill="currentColor" d="M12 11v2.8h4c-.2 1.1-1.4 3.2-4 3.2-2.4 0-4.4-2-4.4-4.5S9.6 8 12 8c1.4 0 2.3.6 2.8 1.1l1.9-1.8C15.5 6.2 13.9 5.5 12 5.5 8.4 5.5 5.5 8.4 5.5 12s2.9 6.5 6.5 6.5c3.8 0 6.3-2.6 6.3-6.4 0-.4 0-.7-.1-1.1H12z"/></svg>
           المتابعة عبر جوجل
         </Button>
