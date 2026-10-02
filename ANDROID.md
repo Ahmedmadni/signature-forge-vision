@@ -245,3 +245,25 @@ npx cap open android
 2. يعمل هذا المسار على Android فقط. في الويب وiOS (مستقبلًا) يبقى مسار الويب، أو يُنفذ بديل Native مناسب للمنصة.
 
 **ملفات N01:** `src/lib/native-document-scanner.ts`، `src/lib/native-document-scanner.test.ts`، `src/routes/_authenticated/scan.tsx`، `src/lib/scan.ts`.
+
+
+## Versioning للإصدارات
+
+يقرأ Gradle رقم واسم الإصدار من متغيرات البيئة أو Gradle properties:
+
+```bash
+WAQQI_VERSION_CODE=42 WAQQI_VERSION_NAME=1.4.2 ./gradlew :app:bundleRelease
+```
+
+القيم الافتراضية للتطوير المحلي:
+
+- `versionCode = 1`
+- `versionName = 1.0.0`
+
+GitHub Actions يضبط `WAQQI_VERSION_CODE` تلقائيًا من رقم تشغيل الـworkflow ويستخدم اسم إصدار CI مثل `1.0.<run>-ci`.
+
+### توقيع Release
+
+لا تضع keystore أو كلمات المرور داخل المستودع. الملفات `*.jks` و`*.keystore` و`key.properties` مستبعدة من Git. عند تجهيز Google Play استخدم Play App Signing أو GitHub Secrets/بيئة نشر آمنة لإدخال بيانات التوقيع.
+
+الـAAB الذي يبنيه CI الحالي مخصص للتحقق من قابلية بناء Release، وليس artifact إنتاجيًا موقّعًا للنشر.
