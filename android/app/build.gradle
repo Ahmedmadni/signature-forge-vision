@@ -3,6 +3,13 @@ apply plugin: 'com.android.application'
 def waqqiVersionCode = (System.getenv("WAQQI_VERSION_CODE") ?: project.findProperty("WAQQI_VERSION_CODE") ?: "1") as Integer
 def waqqiVersionName = System.getenv("WAQQI_VERSION_NAME") ?: project.findProperty("WAQQI_VERSION_NAME") ?: "1.0.0"
 
+if (waqqiVersionCode < 1) {
+    throw new GradleException("WAQQI_VERSION_CODE must be >= 1")
+}
+if (!waqqiVersionName.toString().trim()) {
+    throw new GradleException("WAQQI_VERSION_NAME must not be empty")
+}
+
 android {
     namespace = "com.ahmedelmadni.waqqi"
     compileSdk = rootProject.ext.compileSdkVersion
