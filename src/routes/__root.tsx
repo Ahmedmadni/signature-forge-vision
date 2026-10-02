@@ -18,6 +18,8 @@ import { ThemeProvider, themeInitScript } from "../lib/theme";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { watchNativeAuthLinks } from "@/lib/native-auth";
+import { toast } from "sonner";
 
 function NotFoundComponent() {
   return (
@@ -133,6 +135,30 @@ function RootComponent() {
     });
     return () => sub.subscription.unsubscribe();
   }, [router, queryClient]);
+
+  useEffect(() => {
+    let disposed = false;
+    let cleanup: (() => Promise<void>) | undefined;
+    void watchNativeAuthLinks(
+      () => {
+        if (disposed) return;
+        void router.invalidate().then(() => router.navigate({ to: "/home" }));
+        toast.success("تم تسجيل الدخول داخل تطبيق وقِّع");
+      },
+      (message) => {
+        if (!disposed) toast.error(message);
+      },
+    ).then((release) => {
+      if (disposed) void release();
+      else cleanup = release;
+    }).catch(() => {
+      if (!disposed) toast.error("تعذّر تفعيل العودة إلى التطبيق بعد تسجيل الدخول");
+    });
+    return () => {
+      disposed = true;
+      if (cleanup) void cleanup();
+    };
+  }, [router]);
 
   return (
     <QueryClientProvider client={queryClient}>
