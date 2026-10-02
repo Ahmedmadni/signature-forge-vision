@@ -210,7 +210,7 @@ export function PdfSignWorkspace({ file, signature, onRequestSignature, onDone }
           return;
         }
       }
-      const out = await buildSignedPdf(bytes.slice(), placements);
+      const out = await buildSignedPdf(bytes, placements);
       const copy = new Uint8Array(out.length);
       copy.set(out);
       const blob = new Blob([copy.buffer], { type: "application/pdf" });
