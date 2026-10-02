@@ -108,6 +108,9 @@ function HomePage() {
         <p className="mt-1 text-sm text-muted-foreground">
           ارفع ملف PDF، ضع توقيعك، واحفظه على جهازك — بدون تعقيد.
         </p>
+        <p className="mt-2 text-xs text-muted-foreground">
+          ابدأ فورًا بدون تسجيل دخول. يمكنك إضافة حسابك لاحقًا من <Link to="/account" className="font-semibold text-primary underline-offset-2 hover:underline">حسابي</Link>.
+        </p>
       </header>
 
       <input
