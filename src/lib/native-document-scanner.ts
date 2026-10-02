@@ -22,6 +22,14 @@ export function isAndroidNativeApp(): boolean {
   return Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android";
 }
 
+/** True even if a remote-hosted WebView fails to inject the Capacitor JS bridge. */
+export function isPackagedAndroidApp(): boolean {
+  return isAndroidNativeApp() || (
+    typeof navigator !== "undefined" &&
+    /WaqqiAndroid\/\d+/i.test(navigator.userAgent)
+  );
+}
+
 export function canUseNativeScanner(): boolean {
   return isAndroidNativeApp() && Capacitor.isPluginAvailable("DocumentScanner");
 }
