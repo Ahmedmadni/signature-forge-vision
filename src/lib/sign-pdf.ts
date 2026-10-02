@@ -91,7 +91,7 @@ export async function buildSignedPdf(
 
   let pdfDoc;
   try {
-    pdfDoc = await PDFDocument.load(source, { ignoreEncryption: true });
+    pdfDoc = await PDFDocument.load(source);
   } catch {
     throw new Error("تعذّر قراءة ملف PDF (قد يكون تالفًا أو محميًا بكلمة مرور)");
   }
