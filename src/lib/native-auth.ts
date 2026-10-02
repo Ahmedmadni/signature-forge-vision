@@ -13,7 +13,10 @@ import { supabase } from "@/integrations/supabase/client";
 export const NATIVE_AUTH_REDIRECT = "com.ahmedelmadni.waqqi://auth/callback";
 
 export function isAndroidNativeAuth(): boolean {
-  return Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android";
+  return (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android") || (
+    typeof navigator !== "undefined" &&
+    /WaqqiAndroid\/\d+/i.test(navigator.userAgent)
+  );
 }
 
 export function isNativeAuthCallback(url: string): boolean {
