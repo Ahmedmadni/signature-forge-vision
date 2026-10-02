@@ -136,6 +136,7 @@ function ScanPage() {
   const [pages, setPages] = useState<Page[]>([]);
   const [saving, setSaving] = useState(false);
   const [nativeBusy, setNativeBusy] = useState(false);
+  const [nativeScannerIssue, setNativeScannerIssue] = useState<string | null>(null);
 
   const processBlob = useCallback(async (blob: Blob, cameraQuad?: Quad, nativeProcessed = false) => {
     setBusy("جارٍ اكتشاف حدود الصفحة وتحسينها…");
@@ -202,11 +203,13 @@ function ScanPage() {
       return;
     }
     if (!canUseNativeScanner()) {
-      toast.warning("الإصدار المثبت لا يحتوي الماسح الأصلي بعد. أنشئ APK جديدًا بعد مزامنة Capacitor.");
-      openWebCamera();
+      setNativeScannerIssue(
+        "واجهة Google ML Kit الأصلية غير متاحة في نسخة التطبيق هذه. حدّث APK أولًا؛ ويمكنك فتح ماسح الويب يدويًا عند الحاجة.",
+      );
       return;
     }
 
+    setNativeScannerIssue(null);
     setNativeBusy(true);
     try {
       const images = await scanNativeDocuments(setBusy);
@@ -227,8 +230,10 @@ function ScanPage() {
         error instanceof NativeScannerUnavailableError ||
         /UNSUPPORTED|Google Play services|not available|not supported|module install|unimplemented/i.test(message);
       if (unsupported) {
-        toast.warning("الماسح الأصلي غير مدعوم على هذا الجهاز حاليًا؛ سيتم فتح ماسح الويب.");
-        openWebCamera();
+        setNativeScannerIssue(
+          "تعذر تشغيل Google ML Kit على هذا الجهاز. تأكد من خدمات Google Play والاتصال بالإنترنت، أو اختر ماسح الويب الاحتياطي.",
+        );
+        toast.warning("تعذر تشغيل الماسح الأصلي. لم نفتح الماسح الاحتياطي تلقائيًا.");
       } else {
         toast.error(message);
       }
@@ -508,6 +513,20 @@ function ScanPage() {
           <span className="text-[11px] text-muted-foreground">اختر عدة صور دفعة واحدة</span>
         </button>
       </div>
+
+      {nativeScannerIssue && (
+        <div role="alert" className="space-y-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
+          <p>{nativeScannerIssue}</p>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={() => { setNativeScannerIssue(null); void startScan(); }}>
+              إعادة محاولة ML Kit
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => { setNativeScannerIssue(null); openWebCamera(); }}>
+              فتح ماسح الويب يدويًا
+            </Button>
+          </div>
+        </div>
+      )}
 
       {busy && (
         <div className="flex items-center justify-center gap-2 rounded-2xl border border-border bg-card/60 p-3 text-sm text-muted-foreground">
