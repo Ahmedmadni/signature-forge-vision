@@ -24,7 +24,7 @@ export const Route = createFileRoute("/_authenticated/account")({
 });
 
 function AccountPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const usage = useUsage();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
@@ -40,27 +40,41 @@ function AccountPage() {
         <h1 className="font-display text-2xl font-semibold tracking-tight">حسابي</h1>
       </header>
 
-      <section className="flex items-center gap-3 rounded-3xl border border-border bg-card/60 p-4">
-        <div className="grid h-11 w-11 place-items-center rounded-xl bg-gradient-brand text-primary-foreground">
-          <Mail className="h-5 w-5" />
+      <section className="space-y-3 rounded-3xl border border-border bg-card/60 p-4">
+        <div className="flex items-center gap-3">
+          <div className="grid h-11 w-11 place-items-center rounded-xl bg-gradient-brand text-primary-foreground">
+            <Mail className="h-5 w-5" />
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium">
+              {authLoading ? "جارٍ معرفة حالة الحساب…" : user?.email ?? "أنت تستخدم وقِّع كضيف"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {user ? (unlimited ? "الخطة المميزة" : "الخطة المجانية") : "لا تحتاج حسابًا للمسح والتوقيع والحفظ"}
+            </p>
+          </div>
         </div>
-        <div className="min-w-0">
-          <p className="truncate text-sm font-medium">{user?.email ?? "—"}</p>
-          <p className="text-xs text-muted-foreground">
-            {unlimited ? "الخطة المميزة" : "الخطة المجانية"}
-          </p>
-        </div>
+        {!authLoading && !user && (
+          <>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              توقيعات الضيف محفوظة محليًا على هذا الجهاز فقط، ولا تُزامَن مع حسابك تلقائيًا. لا تحذف بيانات التطبيق إذا أردت الاحتفاظ بها.
+            </p>
+            <Button asChild className="w-full bg-gradient-brand text-primary-foreground shadow-glow">
+              <Link to="/auth">تسجيل الدخول أو إنشاء حساب (اختياري)</Link>
+            </Button>
+          </>
+        )}
       </section>
 
       <section className="rounded-3xl border border-border bg-card/60 p-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold">الاستخدام اليوم</h2>
+          <h2 className="text-sm font-semibold">{user ? "الاستخدام اليوم" : "الاستخدام اليوم على هذا الجهاز"}</h2>
           <span className="text-xs text-muted-foreground">
             {unlimited ? "غير محدود" : `${used} / ${limit} صفحات`}
           </span>
         </div>
         <Progress className="mt-3" value={unlimited ? 100 : Math.min((used / limit) * 100, 100)} />
-        {!unlimited && (
+        {user && !unlimited && (
           <Button
             className="mt-4 w-full bg-gradient-brand text-primary-foreground shadow-glow"
             onClick={() => setPaywall(true)}
@@ -91,15 +105,17 @@ function AccountPage() {
           </span>
           <span className="text-xs text-muted-foreground">{theme === "dark" ? "داكن" : "فاتح"}</span>
         </button>
-        <button
-          onClick={async () => {
-            await supabase.auth.signOut();
-            navigate({ to: "/auth" });
-          }}
-          className="flex w-full items-center gap-2 rounded-2xl px-3 py-3 text-sm text-destructive hover:bg-muted/60"
-        >
-          <LogOut className="h-4 w-4" /> تسجيل الخروج
-        </button>
+        {user && (
+          <button
+            onClick={async () => {
+              await supabase.auth.signOut();
+              navigate({ to: "/home" });
+            }}
+            className="flex w-full items-center gap-2 rounded-2xl px-3 py-3 text-sm text-destructive hover:bg-muted/60"
+          >
+            <LogOut className="h-4 w-4" /> تسجيل الخروج والاستمرار كضيف
+          </button>
+        )}
       </section>
 
       <Paywall open={paywall} onClose={() => setPaywall(false)} used={used} limit={limit} />
