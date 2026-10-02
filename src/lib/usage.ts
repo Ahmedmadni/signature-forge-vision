@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { validateUsagePageCount } from "./usage-policy";
 
 export interface UsageStatus {
   pages_used: number;
@@ -40,8 +41,9 @@ export interface ConsumeResult {
 
 /** يستهلك عدد الصفحات من الحصة اليومية. يعيد allowed=false عند تجاوز الحد. */
 export async function consumePages(pages: number): Promise<ConsumeResult> {
+  const pPages = validateUsagePageCount(pages);
   const { data, error } = await supabase.rpc("consume_signing_pages" as never, {
-    p_pages: pages,
+    p_pages: pPages,
   } as never);
   if (error) throw error;
   const row = (Array.isArray(data) ? data[0] : data) as ConsumeResult;
