@@ -37,3 +37,10 @@ dist-ssr
 .env.development.local
 .env.test.local
 .env.production.local
+
+
+# Android signing secrets
+*.jks
+*.keystore
+key.properties
+android/key.properties
