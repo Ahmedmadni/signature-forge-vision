@@ -83,10 +83,23 @@ jobs:
           chmod +x gradlew
           ./gradlew :app:assembleDebug --no-daemon
 
+      - name: Build unsigned Android release bundle
+        run: |
+          cd android
+          ./gradlew :app:bundleRelease --no-daemon
+
       - name: Upload Android debug APK
         uses: actions/upload-artifact@v4
         with:
           name: waqqi-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload unsigned Android release AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: waqqi-release-aab-unsigned
+          path: android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
           retention-days: 7
