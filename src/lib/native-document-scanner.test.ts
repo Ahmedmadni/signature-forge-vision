@@ -92,6 +92,21 @@ describe("Android ML Kit scanner bridge", () => {
     expect(Array.from(new Uint8Array(await pages![1].arrayBuffer()))).toEqual([4, 5, 6]);
   });
 
+  it("streams pages one by one without creating an extra in-memory page list", async () => {
+    native.scanDocument.mockResolvedValue({
+      scannedImages: ["content://scan/first", "content://scan/second"],
+    });
+    native.readFile
+      .mockResolvedValueOnce({ data: "AQID" })
+      .mockResolvedValueOnce({ data: "BAUG" });
+    const seen: number[][] = [];
+    const count = await scanNativeDocuments(undefined, async (blob) => {
+      seen.push(Array.from(new Uint8Array(await blob.arrayBuffer())));
+    });
+    expect(count).toBe(2);
+    expect(seen).toEqual([[1, 2, 3], [4, 5, 6]]);
+  });
+
   it("does not treat scanner cancellation as a scan failure", async () => {
     native.scanDocument.mockRejectedValue(new Error("Scan cancelled or failed. Result code: 0"));
     expect(await scanNativeDocuments()).toBeNull();
