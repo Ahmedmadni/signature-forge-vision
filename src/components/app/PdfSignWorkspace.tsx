@@ -199,16 +199,13 @@ export function PdfSignWorkspace({ file, signature, onRequestSignature, onDone }
     }
     setSaving(true);
     try {
-      const quota = await consumePages(signedPagesCount).catch((e) => {
-        console.error("[waqqi] quota error", e);
-        return null;
-      });
-      if (quota) {
-        invalidateUsage();
-        if (!quota.allowed) {
-          setPaywall({ used: quota.pages_used, limit: quota.daily_limit });
-          return;
-        }
+      // Never silently bypass a failed signed-in quota check.
+      // Guest users are handled by the device-local quota in consumePages().
+      const quota = await consumePages(signedPagesCount);
+      invalidateUsage();
+      if (!quota.allowed) {
+        setPaywall({ used: quota.pages_used, limit: quota.daily_limit });
+        return;
       }
       const out = await buildSignedPdf(bytes, placements);
       const copy = new Uint8Array(out.length);
