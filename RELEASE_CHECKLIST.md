@@ -61,7 +61,7 @@
 
 ## P1 — Supabase / Production Security
 
-- [ ] تطبيق أحدث migrations على مشروع الإنتاج والتحقق منها.
+- [ ] تطبيق أحدث migrations على مشروع الإنتاج والتحقق منها باستخدام `supabase/PRODUCTION_VERIFY.sql`.
 - [ ] اختبار مستخدم A مقابل مستخدم B لكل RLS الحساسة.
 - [ ] اختبار `consume_signing_pages` بقيم 0 / سالبة / ضخمة / concurrent.
 - [ ] مراجعة bucket `documents` الفعلي إذا بدأ استخدامه من العميل.
