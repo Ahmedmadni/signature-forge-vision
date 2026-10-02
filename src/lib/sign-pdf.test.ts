@@ -201,6 +201,102 @@ describe("buildSignedPdf", () => {
     );
   });
 
+  it("keeps multiple signatures across distant pages in a larger document", async () => {
+    const source = await makePdf(60);
+    const placements: Placement[] = [
+      {
+        id: "sig-first",
+        page: 1,
+        xPct: 0.08,
+        yPct: 0.08,
+        wPct: 0.2,
+        hPct: 0.07,
+        image: ONE_PIXEL_PNG,
+      },
+      {
+        id: "sig-middle",
+        page: 30,
+        xPct: 0.4,
+        yPct: 0.45,
+        wPct: 0.2,
+        hPct: 0.07,
+        image: ONE_PIXEL_PNG,
+      },
+      {
+        id: "sig-last",
+        page: 60,
+        xPct: 0.68,
+        yPct: 0.84,
+        wPct: 0.2,
+        hPct: 0.07,
+        image: ONE_PIXEL_JPEG,
+      },
+    ];
+
+    const result = await buildSignedPdf(source, placements);
+    const reopened = await PDFDocument.load(result);
+
+    expect(reopened.getPageCount()).toBe(60);
+    expect(result.byteLength).toBeGreaterThan(source.byteLength);
+  });
+
+  it("handles a PDF with mixed portrait and landscape pages", async () => {
+    const doc = await PDFDocument.create();
+    doc.addPage([595.28, 841.89]);
+    doc.addPage([841.89, 595.28]);
+    const source = await doc.save();
+
+    const placements: Placement[] = [
+      {
+        id: "portrait",
+        page: 1,
+        xPct: 0.1,
+        yPct: 0.8,
+        wPct: 0.25,
+        hPct: 0.08,
+        image: ONE_PIXEL_PNG,
+      },
+      {
+        id: "landscape",
+        page: 2,
+        xPct: 0.55,
+        yPct: 0.72,
+        wPct: 0.25,
+        hPct: 0.08,
+        image: ONE_PIXEL_PNG,
+      },
+    ];
+
+    const result = await buildSignedPdf(source, placements);
+    const reopened = await PDFDocument.load(result);
+
+    expect(reopened.getPage(0).getSize()).toMatchObject({
+      width: 595.28,
+      height: 841.89,
+    });
+    expect(reopened.getPage(1).getSize()).toMatchObject({
+      width: 841.89,
+      height: 595.28,
+    });
+  });
+
+  it("rejects truncated PDF headers instead of producing output", async () => {
+    const truncated = new TextEncoder().encode("%PDF-1.7\n1 0 obj\n<< /Type /Catalog >>");
+    await expect(buildSignedPdf(truncated, [])).rejects.toThrow(
+      "تعذّر قراءة ملف PDF",
+    );
+  });
+
+  it("returns a valid empty-page PDF when source has zero pages", async () => {
+    const doc = await PDFDocument.create();
+    const source = await doc.save();
+
+    const result = await buildSignedPdf(source, []);
+    const reopened = await PDFDocument.load(result);
+
+    expect(reopened.getPageCount()).toBe(0);
+  });
+
   it("returns the user-facing error for malformed PDF input", async () => {
     await expect(buildSignedPdf(new Uint8Array([1, 2, 3, 4]), [])).rejects.toThrow(
       "تعذّر قراءة ملف PDF",
