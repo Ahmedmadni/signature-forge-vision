@@ -305,14 +305,15 @@ describe("buildSignedPdf", () => {
     );
   });
 
-  it("returns a valid empty-page PDF when source has zero pages", async () => {
+  it("preserves pdf-lib normalization for a document created without explicit pages", async () => {
     const doc = await PDFDocument.create();
     const source = await doc.save();
+    const normalizedSource = await PDFDocument.load(source);
 
     const result = await buildSignedPdf(source, []);
     const reopened = await PDFDocument.load(result);
 
-    expect(reopened.getPageCount()).toBe(0);
+    expect(reopened.getPageCount()).toBe(normalizedSource.getPageCount());
   });
 
   it("returns the user-facing error for malformed PDF input", async () => {
