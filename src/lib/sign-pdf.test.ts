@@ -55,6 +55,24 @@ describe("buildSignedPdf", () => {
     });
   });
 
+  it("does not mutate the source PDF bytes while signing", async () => {
+    const source = await makePdf(2);
+    const snapshot = new Uint8Array(source);
+    const placement: Placement = {
+      id: "immutability",
+      page: 1,
+      xPct: 0.1,
+      yPct: 0.1,
+      wPct: 0.2,
+      hPct: 0.08,
+      image: ONE_PIXEL_PNG,
+    };
+
+    await buildSignedPdf(source, [placement]);
+
+    expect(source).toEqual(snapshot);
+  });
+
   it("produces a readable PDF with the original page count", async () => {
     const source = await makePdf(2);
     const placement: Placement = {
