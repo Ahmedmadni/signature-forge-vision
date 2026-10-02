@@ -1,14 +1,12 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { supabase } from "@/integrations/supabase/client";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { MobileShell } from "@/components/app/MobileShell";
 
+/**
+ * Public app shell. Scanning, signing and device-local signatures work as a
+ * guest; authentication is an optional account feature, not a route gate.
+ */
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
-  beforeLoad: async () => {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) throw redirect({ to: "/auth" });
-    return { user: data.user };
-  },
   component: () => (
     <MobileShell>
       <Outlet />
