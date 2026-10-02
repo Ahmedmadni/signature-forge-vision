@@ -239,7 +239,7 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
     let lastPaint = 0;
     const paint = (time: number) => {
       frame = window.requestAnimationFrame(paint);
-      if (time - lastPaint < 33) return; // نحو 30fps كحد أقصى
+      if (time - lastPaint < 42) return; // حتى 24 إطارًا/ثانية لتخفيف الحمل
       lastPaint = time;
 
       const video = videoRef.current;
@@ -247,7 +247,7 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
       if (!video || !canvas || video.readyState < 2 || !video.videoWidth || !video.videoHeight) return;
       if (!viewBox.width || !viewBox.height) return;
 
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.25);
       const pixelWidth = Math.max(1, Math.round(viewBox.width * dpr));
       const pixelHeight = Math.max(1, Math.round(viewBox.height * dpr));
       if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
@@ -348,12 +348,11 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
         }
 
         const strongDetection = result.stableEnough && result.confidence >= 0.8 && result.edgeScore >= 0.62;
-        if (strongDetection && movement < 0.0085) {
+        if (strongDetection && movement < 0.006) {
           stableFramesRef.current += 1;
-        } else if (movement < 0.014 && result.confidence >= 0.68) {
-          stableFramesRef.current = Math.max(0, stableFramesRef.current);
         } else {
-          stableFramesRef.current = Math.max(0, stableFramesRef.current - 1);
+          // Never reuse an old stability count when edges become unreliable.
+          stableFramesRef.current = 0;
         }
         setStableFrames(stableFramesRef.current);
 
