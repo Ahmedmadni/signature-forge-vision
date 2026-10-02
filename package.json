@@ -15,7 +15,8 @@
     "android:shell": "node scripts/android-shell.mjs",
     "android:sync": "vite build && node scripts/android-shell.mjs && cap sync android",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "release:preflight": "node scripts/release-preflight.mjs"
   },
   "dependencies": {
     "@capacitor-mlkit/document-scanner": "8.2.1",
