@@ -11,6 +11,7 @@ import { useDefaultSignature, saveSignature, useInvalidateSignatures } from "@/l
 import { useUsage } from "@/lib/usage";
 import { toast } from "sonner";
 import { playSfx, haptic } from "@/lib/sfx";
+import { validatePdfFile } from "@/lib/pdf-file-policy";
 
 export const Route = createFileRoute("/_authenticated/home")({
   head: () => ({
@@ -37,9 +38,15 @@ function HomePage() {
 
   useEffect(() => {
     const pending = takePendingFile();
-    if (pending) setFile(pending);
+    if (!pending) return;
+    const result = validatePdfFile(pending);
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
+    }
+    if (result.warning) toast.warning(result.warning);
+    setFile(pending);
   }, []);
-
 
   const used = usage.data?.pages_used ?? 0;
   const limit = usage.data?.daily_limit ?? 3;
@@ -47,10 +54,12 @@ function HomePage() {
 
   const pick = (f: File | undefined) => {
     if (!f) return;
-    if (f.type !== "application/pdf" && !f.name.toLowerCase().endsWith(".pdf")) {
-      toast.error("اختر ملف PDF فقط");
+    const result = validatePdfFile(f);
+    if (!result.ok) {
+      toast.error(result.error);
       return;
     }
+    if (result.warning) toast.warning(result.warning);
     setFile(f);
   };
 
