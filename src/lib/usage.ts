@@ -97,6 +97,20 @@ export interface ConsumeResult {
   unlimited: boolean;
 }
 
+/**
+ * Restore local guest pages when a verified file-save operation fails.
+ * Only call this after a successful guest consume and a failed save.
+ * This is a UX recovery path, never a server entitlement or purchase refund.
+ */
+export function restoreFailedGuestSave(pages: number): void {
+  const count = validateUsagePageCount(pages);
+  if (typeof localStorage === "undefined") return;
+  const current = readGuestUsage();
+  if (current.pages_used === 0) return;
+  const remainingUsed = Math.max(0, current.pages_used - count);
+  localStorage.setItem(GUEST_USAGE_KEY, JSON.stringify({ day: today(), count: remainingUsed }));
+}
+
 /** Signed-in quotas remain server-side; guest quotas are local for this device. */
 export async function consumePages(pages: number): Promise<ConsumeResult> {
   const pPages = validateUsagePageCount(pages);
