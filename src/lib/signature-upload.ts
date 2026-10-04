@@ -1,5 +1,5 @@
 const MAX_UPLOAD_BYTES = 12 * 1024 * 1024;
-const MAX_STORED_URL_CHARS = 1_000_000;
+const MAX_STORED_URL_CHARS = 350_000;
 const MAX_IMAGE_EDGE = 1100;
 const ALLOWED_TYPES = new Set(["image/png", "image/jpeg"]);
 
