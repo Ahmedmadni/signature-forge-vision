@@ -7,7 +7,7 @@ vi.mock("@/lib/use-auth", () => ({
   useAuth: () => ({ user: null, loading: false }),
 }));
 
-import { consumeGuestPages, readGuestUsage } from "./usage";
+import { consumeGuestPages, readGuestUsage, restoreFailedGuestSave } from "./usage";
 
 describe("guest daily page allowance", () => {
   beforeEach(() => {
@@ -31,6 +31,15 @@ describe("guest daily page allowance", () => {
     expect(consumeGuestPages(2)).toMatchObject({ allowed: true, pages_used: 2, remaining: 1 });
     expect(consumeGuestPages(2)).toMatchObject({ allowed: false, pages_used: 2, remaining: 1 });
     expect(consumeGuestPages(1)).toMatchObject({ allowed: true, pages_used: 3, remaining: 0 });
+  });
+
+  it("restores guest allowance after a failed PDF save, but never creates negative usage", () => {
+    expect(consumeGuestPages(2)).toMatchObject({ allowed: true, pages_used: 2, source: "guest" });
+    restoreFailedGuestSave(2);
+    expect(readGuestUsage()).toMatchObject({ pages_used: 0, remaining: 3 });
+    // Repeated local restoration never creates a negative counter.
+    restoreFailedGuestSave(2);
+    expect(readGuestUsage().pages_used).toBe(0);
   });
 
   it("resets a guest counter from a previous UTC date", () => {
