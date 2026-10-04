@@ -1,4 +1,16 @@
 import { Capacitor } from "@capacitor/core";
+import { isPackagedAndroidApp } from "@/lib/native-document-scanner";
+
+/** Never treat path separators or Android-invalid filename characters as paths. */
+export function safeExportFileName(fileName: string): string {
+  const safe = fileName
+    .replace(/[\\/:*?"<>|\u0000-\u001f\u007f]/g, "_")
+    .replace(/^\.+/, "_")
+    .trim()
+    .slice(0, 160);
+  if (!safe || safe === "_" || safe === ".") return "مستند-وقع.pdf";
+  return safe;
+}
 
 function toBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -13,34 +25,48 @@ export function isNative() {
   return Capacitor.isNativePlatform();
 }
 
-/** يحفظ الملف في جهاز المستخدم: تنزيل على الويب، ومجلد المستندات + مشاركة على أندرويد. */
+/** Save to the device: native Filesystem + share on Android, browser download on web. */
 export async function saveFile(blob: Blob, fileName: string): Promise<string> {
-  if (isNative()) {
+  if (blob.size === 0) throw new Error("الملف الناتج فارغ، ولم يُحفظ.");
+  const name = safeExportFileName(fileName);
+  const inAndroidApk = isPackagedAndroidApp();
+
+  if (isNative() || inAndroidApk) {
+    // The remote-hosted Android WebView sometimes starts without its native
+    // bridge. A blob anchor in Android WebView is NOT a reliable fallback.
+    if (!Capacitor.isPluginAvailable("Filesystem")) {
+      throw new Error("تعذّر الاتصال بذاكرة Android. أغلق التطبيق وافتحه مجددًا؛ لم يتم حفظ الملف.");
+    }
     const { Filesystem, Directory } = await import("@capacitor/filesystem");
-    const { Share } = await import("@capacitor/share");
     const data = await toBase64(blob);
     const res = await Filesystem.writeFile({
-      path: fileName,
+      path: name,
       data,
       directory: Directory.Documents,
       recursive: true,
     });
-    try {
-      await Share.share({ title: fileName, url: res.uri, dialogTitle: "مشاركة المستند الموقّع" });
-    } catch {
-      /* ألغى المستخدم المشاركة */
+    if (Capacitor.isPluginAvailable("Share")) {
+      try {
+        const { Share } = await import("@capacitor/share");
+        await Share.share({ title: name, url: res.uri, dialogTitle: "مشاركة المستند" });
+      } catch {
+        // Canceling a share dialog must not undo a completed disk save.
+      }
     }
     return res.uri;
   }
 
   const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = fileName;
-  a.rel = "noopener";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 60_000);
-  return fileName;
+  try {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } finally {
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  }
+  return name;
 }
