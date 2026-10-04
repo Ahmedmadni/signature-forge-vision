@@ -4,7 +4,8 @@ import { isPackagedAndroidApp } from "@/lib/native-document-scanner";
 /** Never treat path separators or Android-invalid filename characters as paths. */
 export function safeExportFileName(fileName: string): string {
   const safe = fileName
-    .replace(/[\\/:*?"<>|\u0000-\u001f\u007f]/g, "_")
+    .replace(/[\\/:*?"<>|]/g, "_")
+    .replace(/\p{Cc}/gu, "_")
     .replace(/^\.+/, "_")
     .trim()
     .slice(0, 160);
