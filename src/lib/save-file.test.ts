@@ -16,7 +16,7 @@ vi.mock("@/lib/native-document-scanner", () => ({
   isPackagedAndroidApp: () => controls.packaged,
 }));
 
-import { safeExportFileName, saveFile } from "./save-file";
+import { safeExportFileName, saveFile, uniqueAndroidExportName } from "./save-file";
 
 describe("PDF export device safety", () => {
   beforeEach(() => {
@@ -30,6 +30,16 @@ describe("PDF export device safety", () => {
     expect(safeExportFileName("تقرير:2026/سري?.pdf")).toBe("تقرير_2026_سري_.pdf");
     expect(safeExportFileName("../ملف.pdf")).toBe("__ملف.pdf");
     expect(safeExportFileName(" ")).toBe("مستند-وقع.pdf");
+  });
+
+  it("creates distinct native filenames for multiple scans on the same day", () => {
+    const name = "مسح-2026-10-04.pdf";
+    const now = Date.UTC(2026, 9, 4, 16, 15, 30);
+    const first = uniqueAndroidExportName(name, now, "ab12cd34");
+    const second = uniqueAndroidExportName(name, now, "ef56gh78");
+    expect(first).toBe("مسح-2026-10-04-20261004161530-ab12cd34.pdf");
+    expect(second).not.toBe(first);
+    expect(second).toMatch(/\.pdf$/);
   });
 
   it("rejects empty exports before showing a download", async () => {
