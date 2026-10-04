@@ -13,6 +13,20 @@ export function safeExportFileName(fileName: string): string {
   return safe;
 }
 
+/**
+ * Scans are often saved more than once per day. Never let a second native
+ * export silently overwrite an existing file with the same display name.
+ */
+export function uniqueAndroidExportName(name: string, timestamp: number, suffix: string): string {
+  const dot = name.lastIndexOf(".");
+  const base = dot > 0 ? name.slice(0, dot) : name;
+  const extension = dot > 0 ? name.slice(dot) : "";
+  const stamp = new Date(timestamp).toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
+  // Keep room for suffixes under Android's filename byte limit (Arabic is UTF-8).
+  const shortBase = Array.from(base).slice(0, 64).join("");
+  return `${shortBase}-${stamp}-${suffix}${extension}`;
+}
+
 function toBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -40,8 +54,9 @@ export async function saveFile(blob: Blob, fileName: string): Promise<string> {
     }
     const { Filesystem, Directory } = await import("@capacitor/filesystem");
     const data = await toBase64(blob);
+    const exportName = uniqueAndroidExportName(name, Date.now(), crypto.randomUUID().slice(0, 8));
     const res = await Filesystem.writeFile({
-      path: name,
+      path: exportName,
       data,
       directory: Directory.Documents,
       recursive: true,
@@ -49,7 +64,7 @@ export async function saveFile(blob: Blob, fileName: string): Promise<string> {
     if (Capacitor.isPluginAvailable("Share")) {
       try {
         const { Share } = await import("@capacitor/share");
-        await Share.share({ title: name, url: res.uri, dialogTitle: "مشاركة المستند" });
+        await Share.share({ title: exportName, url: res.uri, dialogTitle: "مشاركة المستند" });
       } catch {
         // Canceling a share dialog must not undo a completed disk save.
       }
