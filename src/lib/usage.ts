@@ -56,6 +56,7 @@ export function consumeGuestPages(pages: number): ConsumeResult {
     daily_limit: DAILY_FREE_PAGES,
     remaining: Math.max(0, DAILY_FREE_PAGES - nextUsed),
     unlimited: false,
+    source: "guest",
   };
 }
 
@@ -95,6 +96,7 @@ export interface ConsumeResult {
   daily_limit: number;
   remaining: number;
   unlimited: boolean;
+  source?: "guest" | "account";
 }
 
 /**
@@ -121,7 +123,7 @@ export async function consumePages(pages: number): Promise<ConsumeResult> {
   if (error) throw error;
   const row = (Array.isArray(data) ? data[0] : data) as ConsumeResult | undefined;
   if (!row) throw new Error("لم يرجع الخادم نتيجة حصة التوقيع");
-  return row;
+  return { ...row, source: "account" };
 }
 
 export function useInvalidateUsage() {
