@@ -131,46 +131,24 @@ server: {
 
 ---
 
-## 6) إعلانات Google AdMob
+## 6) الإعلانات والخصوصية
 
-جاهز مسبقًا في الملفات الأصلية:
+الإصدار الحالي من «وقِّع» **لا يعرض إعلانات**، ولا يتضمن Google Mobile Ads SDK، ولا يطلب صلاحية Advertising ID (`AD_ID`).
 
-- `AndroidManifest.xml`: `com.google.android.gms.ads.APPLICATION_ID`
-  (حاليًا معرّف اختبار من Google) + صلاحيات `INTERNET`،
-  `ACCESS_NETWORK_STATE`، `com.google.android.gms.permission.AD_ID`.
-- `android/app/build.gradle`: `com.google.android.gms:play-services-ads`.
+إذا تقرر إضافة الإعلانات مستقبلًا، تعامل معها كميزة مستقلة تتطلب قبل دمجها:
 
-قبل النشر:
-
-1. أنشئ تطبيقًا في لوحة AdMob واحصل على App ID ووحدات الإعلانات.
-2. استبدل `ca-app-pub-3940256099942544~3347511713` في `AndroidManifest.xml`.
-3. اضبط `.env`:
-
-```
-VITE_ADS_ENABLED=true
-VITE_ADMOB_APP_ID=ca-app-pub-XXXXXXXX~XXXXXXXX
-VITE_ADMOB_BANNER_ID=ca-app-pub-XXXXXXXX/XXXXXXXX
-VITE_ADMOB_INTERSTITIAL_ID=ca-app-pub-XXXXXXXX/XXXXXXXX
-VITE_ADMOB_REWARDED_ID=ca-app-pub-XXXXXXXX/XXXXXXXX
-```
-
-4. لعرض إعلانات أصلية:
-
-```bash
-bun add @capacitor-community/admob
-bun run android:sync
-```
-
-المساحات الإعلانية محجوزة في الواجهة عبر `src/components/app/AdSlot.tsx`.
-
----
+- إضافة SDK معتمد للإعلانات.
+- App ID ووحدات إعلانية إنتاجية، وليس Google test IDs.
+- تحديث سياسة الخصوصية وGoogle Play Data Safety.
+- إعداد consent للمناطق التي تتطلب موافقة المستخدم.
+- إعادة مراجعة الصلاحيات والتتبع قبل النشر.
 
 ## 7) قبل رفع التطبيق إلى Google Play
 
 - ارفع `versionCode` و`versionName` في `android/app/build.gradle`.
 - استخدم `bundleRelease` (AAB) بدل APK.
 - جهّز سياسة الخصوصية: `/privacy` داخل التطبيق.
-- عبّئ نموذج "أمان البيانات" مع ذكر استخدام معرّف الإعلانات (AD_ID).
+- عبّئ نموذج «أمان البيانات» بما يطابق الإصدار الحالي؛ Advertising ID غير مستخدم.
 
 ---
 
