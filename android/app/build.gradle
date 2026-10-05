@@ -10,9 +10,32 @@ if (!waqqiVersionName.toString().trim()) {
     throw new GradleException("WAQQI_VERSION_NAME must not be empty")
 }
 
+def waqqiKeystorePath = System.getenv("WAQQI_KEYSTORE_PATH")
+def waqqiKeystorePassword = System.getenv("WAQQI_KEYSTORE_PASSWORD")
+def waqqiKeyAlias = System.getenv("WAQQI_KEY_ALIAS")
+def waqqiKeyPassword = System.getenv("WAQQI_KEY_PASSWORD")
+def waqqiRequireSignedRelease = (System.getenv("WAQQI_REQUIRE_SIGNED_RELEASE") ?: "false").toBoolean()
+def waqqiHasSigningConfig = [waqqiKeystorePath, waqqiKeystorePassword, waqqiKeyAlias, waqqiKeyPassword].every { it != null && it.toString().trim() }
+
+if (waqqiRequireSignedRelease && !waqqiHasSigningConfig) {
+    throw new GradleException("Signed release requested, but Android signing environment variables are incomplete")
+}
+
 android {
     namespace = "com.ahmedelmadni.waqqi"
     compileSdk = rootProject.ext.compileSdkVersion
+
+    signingConfigs {
+        if (waqqiHasSigningConfig) {
+            release {
+                storeFile file(waqqiKeystorePath)
+                storePassword waqqiKeystorePassword
+                keyAlias waqqiKeyAlias
+                keyPassword waqqiKeyPassword
+            }
+        }
+    }
+
     defaultConfig {
         applicationId "com.ahmedelmadni.waqqi"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -29,6 +52,9 @@ android {
     buildTypes {
         release {
             minifyEnabled false
+            if (waqqiHasSigningConfig) {
+                signingConfig signingConfigs.release
+            }
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
