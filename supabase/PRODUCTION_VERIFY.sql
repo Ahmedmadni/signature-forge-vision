@@ -125,3 +125,23 @@ where n.nspname = 'public'
   and p.proname = 'delete_own_account';
 
 -- المتوقع: صف واحد، arguments فارغ، security_definer=true، وsearch_path=""
+
+-- 10) تحقق PASS/FAIL كامل لدالة حذف الحساب وصلاحياتها.
+select
+  p.proname,
+  pg_get_function_identity_arguments(p.oid) = '' as no_target_arguments,
+  p.prosecdef as security_definer,
+  coalesce(array_to_string(p.proconfig, ','), '') ilike '%search_path=%' as fixed_search_path,
+  has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated_can_execute,
+  not has_function_privilege('anon', p.oid, 'EXECUTE') as anon_blocked,
+  not has_function_privilege('public', p.oid, 'EXECUTE') as public_blocked,
+  pg_get_functiondef(p.oid) ilike '%delete from public.team_members%' as removes_team_members,
+  pg_get_functiondef(p.oid) ilike '%delete from auth.users%' as removes_auth_user,
+  pg_get_functiondef(p.oid) not ilike '%delete from auth.users%where id = $%' as no_external_target_parameter
+from pg_proc p
+join pg_namespace n on n.oid = p.pronamespace
+where n.nspname = 'public'
+  and p.proname = 'delete_own_account';
+
+-- جميع الأعمدة المنطقية أعلاه يجب أن تكون true.
+
