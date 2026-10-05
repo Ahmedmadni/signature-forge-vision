@@ -96,6 +96,15 @@ jobs:
           echo "$BADGING" | grep -F "versionCode='$WAQQI_VERSION_CODE'"
           echo "$BADGING" | grep -F "versionName='$WAQQI_VERSION_NAME'"
 
+          PERMISSIONS="$("$ANDROID_HOME/build-tools/36.0.0/aapt" dump permissions "$APK")"
+          echo "$PERMISSIONS"
+          echo "$PERMISSIONS" | grep -F "android.permission.INTERNET"
+          echo "$PERMISSIONS" | grep -F "android.permission.CAMERA"
+          if echo "$PERMISSIONS" | grep -Fq "com.google.android.gms.permission.AD_ID"; then
+            echo "Advertising ID permission must not ship in this release"
+            exit 1
+          fi
+
       - name: Verify signed Play AAB
         run: jarsigner -verify -verbose -certs android/app/build/outputs/bundle/release/app-release.aab
 
