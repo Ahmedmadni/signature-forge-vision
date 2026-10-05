@@ -47,9 +47,18 @@ requireMatch(
   "Android signing secret files must be ignored by Git.",
 );
 
-if (manifest.includes("ca-app-pub-3940256099942544~3347511713")) {
-  warnings.push("AdMob is still using Google's test application ID.");
-}
+requireMatch(
+  !manifest.includes("ca-app-pub-3940256099942544~3347511713"),
+  "Google's AdMob test application ID must never ship in a release build.",
+);
+requireMatch(
+  !manifest.includes("com.google.android.gms.permission.AD_ID"),
+  "Advertising ID permission is not allowed unless ads are intentionally enabled.",
+);
+requireMatch(
+  !gradle.includes("play-services-ads"),
+  "Google Mobile Ads SDK is not allowed unless the product intentionally enables ads.",
+);
 if (capacitor.includes("signature-forge-vision.lovable.app")) {
   warnings.push("Android shell still loads the hosted Lovable URL and therefore depends on network access.");
 }
