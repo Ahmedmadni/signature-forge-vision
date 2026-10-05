@@ -8,6 +8,8 @@ const manifest = read("android/app/src/main/AndroidManifest.xml");
 const gradle = read("android/app/build.gradle");
 const capacitor = read("capacitor.config.ts");
 const gitignore = read(".gitignore");
+const filePaths = read("android/app/src/main/res/xml/file_paths.xml");
+const variablesGradle = read("android/variables.gradle");
 
 const failures = [];
 const warnings = [];
@@ -64,6 +66,19 @@ requireMatch(
 requireMatch(
   !gradle.includes("play-services-ads"),
   "Google Mobile Ads SDK is not allowed unless the product intentionally enables ads.",
+);
+requireMatch(
+  !filePaths.includes('<external-path name="my_images" path="."') &&
+    !filePaths.includes('<external-path name="waqqi_documents" path="."'),
+  "FileProvider must not expose the entire external storage root.",
+);
+requireMatch(
+  filePaths.includes('path="Documents/"'),
+  "FileProvider must remain scoped to the Documents directory for exported PDFs.",
+);
+requireMatch(
+  !variablesGradle.includes("playServicesAdsVersion"),
+  "Unused Google Mobile Ads version metadata must not be reintroduced.",
 );
 if (capacitor.includes("signature-forge-vision.lovable.app")) {
   warnings.push("Android shell still loads the hosted Lovable URL and therefore depends on network access.");
