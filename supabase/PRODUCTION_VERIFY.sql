@@ -53,6 +53,7 @@ where n.nspname = 'public'
     'has_role',
     'get_usage_status',
     'consume_signing_pages',
+    'delete_own_account',
     'handle_new_user',
     'update_updated_at_column'
   )
@@ -68,7 +69,8 @@ where specific_schema = 'public'
   and routine_name in (
     'has_role',
     'get_usage_status',
-    'consume_signing_pages'
+    'consume_signing_pages',
+    'delete_own_account'
   )
 order by routine_name, grantee;
 
@@ -109,3 +111,17 @@ where schemaname = 'storage'
     or coalesce(with_check, '') ilike '%documents%'
   )
 order by policyname;
+
+
+-- 9) تحقق خاص بدالة حذف الحساب: يجب أن تكون بلا معاملات حتى لا يستطيع العميل تحديد مستخدم آخر.
+select
+  p.proname,
+  pg_get_function_identity_arguments(p.oid) as arguments,
+  p.prosecdef as security_definer,
+  p.proconfig
+from pg_proc p
+join pg_namespace n on n.oid = p.pronamespace
+where n.nspname = 'public'
+  and p.proname = 'delete_own_account';
+
+-- المتوقع: صف واحد، arguments فارغ، security_definer=true، وsearch_path=""
