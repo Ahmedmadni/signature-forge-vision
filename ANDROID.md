@@ -7,7 +7,7 @@
 | معرّف التطبيق | `com.ahmedelmadni.waqqi` |
 | اسم التطبيق | وقِّع |
 | minSdk / targetSdk | 24 / 36 |
-| الإصدار | versionCode 1 — versionName 1.0 |
+| الإصدار | versionCode 1 — versionName 1.0.0 |
 | الأيقونة | مولّدة في `res/mipmap-*` بخلفية `#0F1424` |
 
 ---
