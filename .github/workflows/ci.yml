@@ -104,6 +104,16 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+      - name: Verify release-signing plumbing with an ephemeral CI key
+        shell: bash
+        run: |
+          CI_KEYSTORE="$RUNNER_TEMP/waqqi-ci-release.jks"
+          keytool -genkeypair -v             -keystore "$CI_KEYSTORE"             -storepass changeit             -alias waqqi-ci             -keypass changeit             -keyalg RSA             -keysize 2048             -validity 2             -dname "CN=Waqqi CI, OU=CI, O=Waqqi, L=Riyadh, C=SA"
+          cd android
+          WAQQI_REQUIRE_SIGNED_RELEASE=true           WAQQI_KEYSTORE_PATH="$CI_KEYSTORE"           WAQQI_KEYSTORE_PASSWORD=changeit           WAQQI_KEY_ALIAS=waqqi-ci           WAQQI_KEY_PASSWORD=changeit           ./gradlew :app:assembleRelease --no-daemon
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose app/build/outputs/apk/release/app-release.apk
+          rm -f "$CI_KEYSTORE"
+
       - name: Build unsigned Android release bundle
         run: |
           cd android
