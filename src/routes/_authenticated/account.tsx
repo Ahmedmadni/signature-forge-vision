@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { LogOut, Crown, Moon, Sun, Mail, Settings2, ChevronLeft } from "lucide-react";
+import { LogOut, Crown, Moon, Sun, Mail, Settings2, ChevronLeft, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/lib/use-auth";
@@ -106,15 +106,27 @@ function AccountPage() {
           <span className="text-xs text-muted-foreground">{theme === "dark" ? "داكن" : "فاتح"}</span>
         </button>
         {user && (
-          <button
-            onClick={async () => {
-              await supabase.auth.signOut();
-              navigate({ to: "/home" });
-            }}
-            className="flex w-full items-center gap-2 rounded-2xl px-3 py-3 text-sm text-destructive hover:bg-muted/60"
-          >
-            <LogOut className="h-4 w-4" /> تسجيل الخروج والاستمرار كضيف
-          </button>
+          <>
+            <Link
+              to="/delete-account"
+              className="flex w-full items-center justify-between rounded-2xl px-3 py-3 text-sm text-destructive hover:bg-muted/60"
+            >
+              <span className="flex items-center gap-2">
+                <Trash2 className="h-4 w-4" />
+                طلب حذف الحساب
+              </span>
+              <ChevronLeft className="h-4 w-4" />
+            </Link>
+            <button
+              onClick={async () => {
+                await supabase.auth.signOut();
+                navigate({ to: "/home" });
+              }}
+              className="flex w-full items-center gap-2 rounded-2xl px-3 py-3 text-sm text-destructive hover:bg-muted/60"
+            >
+              <LogOut className="h-4 w-4" /> تسجيل الخروج والاستمرار كضيف
+            </button>
+          </>
         )}
       </section>
 
