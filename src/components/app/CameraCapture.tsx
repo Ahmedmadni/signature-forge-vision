@@ -83,7 +83,12 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
         autoArmedRef.current = false;
         stableFramesRef.current = 0;
         setStableFrames(0);
-        await onCapture(blob, captureQuad);
+        const image = await loadImage(blob);
+        const w = canvas.width;
+        const h = canvas.height;
+        const quad =
+          captureQuad ?? detectDocumentPrecise(image as CanvasImageSource, w, h)?.quad ?? defaultQuad(w, h);
+        setReview({ blob, image: image as CanvasImageSource, width: w, height: h, quad });
       } finally {
         capturingRef.current = false;
         setCapturing(false);
