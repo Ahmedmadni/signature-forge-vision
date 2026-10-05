@@ -10,6 +10,7 @@ const capacitor = read("capacitor.config.ts");
 const gitignore = read(".gitignore");
 const filePaths = read("android/app/src/main/res/xml/file_paths.xml");
 const variablesGradle = read("android/variables.gradle");
+const trackedEnv = read(".env");
 
 const failures = [];
 const warnings = [];
@@ -79,6 +80,18 @@ requireMatch(
 requireMatch(
   !variablesGradle.includes("playServicesAdsVersion"),
   "Unused Google Mobile Ads version metadata must not be reintroduced.",
+);
+requireMatch(
+  !/SERVICE_ROLE|SECRET_KEY|CLIENT_SECRET|PRIVATE_KEY|DATABASE_URL|POSTGRES_PASSWORD/i.test(trackedEnv),
+  "Tracked .env must contain public client configuration only, never server secrets.",
+);
+requireMatch(
+  !/sb_secret_[A-Za-z0-9_-]+/.test(trackedEnv),
+  "Supabase secret keys must never be committed to the tracked .env file.",
+);
+requireMatch(
+  !/^VITE_.*(SECRET|PRIVATE|SERVICE_ROLE|PASSWORD|TOKEN)/im.test(trackedEnv),
+  "VITE_* variables are client-visible and must never contain secret credentials.",
 );
 if (capacitor.includes("signature-forge-vision.lovable.app")) {
   warnings.push("Android shell still loads the hosted Lovable URL and therefore depends on network access.");
