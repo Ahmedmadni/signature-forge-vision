@@ -6,8 +6,9 @@ import { useAuth } from "@/lib/use-auth";
 import { useUsage } from "@/lib/usage";
 import { useTheme } from "@/lib/theme";
 import { supabase } from "@/integrations/supabase/client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Paywall } from "@/components/app/Paywall";
+import { getWaqqiAppInfo, type WaqqiAppInfo } from "@/lib/app-info";
 
 export const Route = createFileRoute("/_authenticated/account")({
   head: () => ({
@@ -29,6 +30,17 @@ function AccountPage() {
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const [paywall, setPaywall] = useState(false);
+  const [appInfo, setAppInfo] = useState<WaqqiAppInfo | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void getWaqqiAppInfo().then((info) => {
+      if (active) setAppInfo(info);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const used = usage.data?.pages_used ?? 0;
   const limit = usage.data?.daily_limit ?? 3;
@@ -127,6 +139,31 @@ function AccountPage() {
               <LogOut className="h-4 w-4" /> تسجيل الخروج والاستمرار كضيف
             </button>
           </>
+        )}
+      </section>
+
+      <section className="rounded-3xl border border-border bg-card/60 p-2">
+        <Link
+          to="/privacy"
+          className="flex w-full items-center justify-between rounded-2xl px-3 py-3 text-sm hover:bg-muted/60"
+        >
+          <span>سياسة الخصوصية</span>
+          <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+        </Link>
+        <Link
+          to="/terms"
+          className="flex w-full items-center justify-between rounded-2xl px-3 py-3 text-sm hover:bg-muted/60"
+        >
+          <span>الشروط والأحكام</span>
+          <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+        </Link>
+        {appInfo?.native && (
+          <div className="flex items-center justify-between px-3 py-3 text-xs text-muted-foreground">
+            <span>إصدار التطبيق</span>
+            <span className="tabular-nums">
+              {appInfo.version ?? "غير متاح"}{appInfo.build ? ` (${appInfo.build})` : ""}
+            </span>
+          </div>
         )}
       </section>
 
