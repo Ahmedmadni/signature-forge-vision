@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   signed-aab:
-    name: Build signed Play AAB
+    name: Build signed Android release
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
