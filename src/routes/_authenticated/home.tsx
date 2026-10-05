@@ -11,7 +11,6 @@ import { useDefaultSignature, saveSignature, useInvalidateSignatures } from "@/l
 import { useUsage } from "@/lib/usage";
 import { toast } from "sonner";
 import { playSfx, haptic } from "@/lib/sfx";
-import { validatePdfFile } from "@/lib/pdf-file-policy";
 
 export const Route = createFileRoute("/_authenticated/home")({
   head: () => ({
@@ -38,15 +37,9 @@ function HomePage() {
 
   useEffect(() => {
     const pending = takePendingFile();
-    if (!pending) return;
-    const result = validatePdfFile(pending);
-    if (!result.ok) {
-      toast.error(result.error);
-      return;
-    }
-    if (result.warning) toast.warning(result.warning);
-    setFile(pending);
+    if (pending) setFile(pending);
   }, []);
+
 
   const used = usage.data?.pages_used ?? 0;
   const limit = usage.data?.daily_limit ?? 3;
@@ -54,12 +47,10 @@ function HomePage() {
 
   const pick = (f: File | undefined) => {
     if (!f) return;
-    const result = validatePdfFile(f);
-    if (!result.ok) {
-      toast.error(result.error);
+    if (f.type !== "application/pdf" && !f.name.toLowerCase().endsWith(".pdf")) {
+      toast.error("اختر ملف PDF فقط");
       return;
     }
-    if (result.warning) toast.warning(result.warning);
     setFile(f);
   };
 
@@ -107,9 +98,6 @@ function HomePage() {
         <h1 className="font-display text-2xl font-semibold tracking-tight">وقّع مستندك</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           ارفع ملف PDF، ضع توقيعك، واحفظه على جهازك — بدون تعقيد.
-        </p>
-        <p className="mt-2 text-xs text-muted-foreground">
-          ابدأ فورًا بدون تسجيل دخول. يمكنك إضافة حسابك لاحقًا من <Link to="/account" className="font-semibold text-primary underline-offset-2 hover:underline">حسابي</Link>.
         </p>
       </header>
 

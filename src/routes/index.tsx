@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { Signature, FileUp, PenLine, Download, ShieldCheck } from "lucide-react";
@@ -7,7 +7,6 @@ import { DeveloperFooter } from "@/components/app/DeveloperFooter";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
-  beforeLoad: () => { throw redirect({ to: "/home" }); },
   head: () => ({
     meta: [
       { title: "وقِّع — تطبيق توقيع ملفات PDF إلكترونيًا" },
@@ -63,7 +62,7 @@ function LandingPage() {
             size="lg"
             className="mt-7 w-full max-w-xs bg-gradient-brand text-primary-foreground shadow-glow"
           >
-            <Link to="/home">ابدأ الآن بدون حساب</Link>
+            <Link to="/auth">ابدأ الآن مجانًا</Link>
           </Button>
           <p className="mt-2 text-xs text-muted-foreground">3 صفحات مجانية كل يوم</p>
         </motion.div>

@@ -16,7 +16,7 @@ import { usePdfDocument, PdfPageCanvas } from "@/lib/pdf-view";
 import type { Placement } from "@/lib/sign-pdf";
 import { buildSignedPdf } from "@/lib/sign-pdf";
 import { saveFile } from "@/lib/save-file";
-import { consumePages, restoreFailedGuestSave, useInvalidateUsage } from "@/lib/usage";
+import { consumePages, useInvalidateUsage } from "@/lib/usage";
 import { Button } from "@/components/ui/button";
 import { Paywall } from "./Paywall";
 import { toast } from "sonner";
@@ -199,36 +199,23 @@ export function PdfSignWorkspace({ file, signature, onRequestSignature, onDone }
     }
     setSaving(true);
     try {
-      // Generate the PDF first. If PDF rendering fails, never debit the daily
-      // allowance for a file that was not created.
-      const out = await buildSignedPdf(bytes, placements);
+      const quota = await consumePages(signedPagesCount).catch((e) => {
+        console.error("[waqqi] quota error", e);
+        return null;
+      });
+      if (quota) {
+        invalidateUsage();
+        if (!quota.allowed) {
+          setPaywall({ used: quota.pages_used, limit: quota.daily_limit });
+          return;
+        }
+      }
+      const out = await buildSignedPdf(bytes.slice(), placements);
       const copy = new Uint8Array(out.length);
       copy.set(out);
       const blob = new Blob([copy.buffer], { type: "application/pdf" });
       const name = file.name.replace(/\.[^.]+$/, "") + "-موقّع.pdf";
-
-      // Signed-in limits stay enforced by the server; guest limits are local.
-      const quota = await consumePages(signedPagesCount);
-      invalidateUsage();
-      if (!quota.allowed) {
-        setPaywall({ used: quota.pages_used, limit: quota.daily_limit });
-        return;
-      }
-      try {
-        await saveFile(blob, name);
-      } catch (saveError) {
-        // Only guest allowances can be restored locally; do not ever fake a
-        // server-side quota refund if the authenticated save fails.
-        if (quota.source === "guest") {
-          try {
-            restoreFailedGuestSave(signedPagesCount);
-            invalidateUsage();
-          } catch (restoreError) {
-            console.warn("[waqqi] failed to restore guest allowance", restoreError);
-          }
-        }
-        throw saveError;
-      }
+      await saveFile(blob, name);
       playSfx("success");
       haptic(24);
       toast.success("تم حفظ المستند الموقّع");

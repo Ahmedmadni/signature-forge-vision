@@ -1,187 +1,292 @@
-# وقِّع — Waqqi
+# Signature Suite
 
-تطبيق عربي Mobile-first لتوقيع ملفات PDF ومسح المستندات متعددة الصفحات، مبني بـ React/TypeScript وSupabase، مع Android shell عبر Capacitor.
+Act as a world-class software architect, UX designer, and senior full-stack engineer with over 30 years of experience building enterprise document management systems.
 
-> الحالة الحالية: MVP متقدم / Release Candidate. الوظائف الأساسية للتوقيع والمسح منفذة، لكن Scanner يحتاج تحققًا نهائيًا على أجهزة حقيقية قبل اعتبار التطبيق Production-ready.
 
-## الوظائف المنفذة
 
-### توقيع PDF
-- فتح ملفات PDF والتنقل بين الصفحات.
-- حماية مدخل الملفات: رفض الملف الفارغ وغير-PDF، تحذير بدءًا من 50 MB، وحد أمان 100 MB لتقليل مخاطر نفاد ذاكرة الهاتف.
-- إنشاء توقيع بالرسم أو الكتابة أو رفع صورة PNG/JPEG.
-- حفظ عدة توقيعات واختيار توقيع افتراضي.
-- وضع التوقيع على الصفحة، سحبه، تغيير حجمه وحذفه.
-- تطبيق التوقيع على جميع الصفحات.
-- إنتاج PDF نهائي مدمج باستخدام `pdf-lib`.
-- معالجة الملف محليًا على الجهاز قدر الإمكان أثناء مسار التوقيع الأساسي.
+Design and build a premium SaaS Electronic Signature Platform similar to Adobe Sign and DocuSign, with a modern, futuristic, enterprise-grade interface.
 
-### Scanner متعدد الصفحات
-- داخل APK Android الجديد: Google ML Kit Native Document Scanner مع كشف حدود أصلي، قص وتسوية وتصوير صفحات متعددة، ثم استيراد الصور المعالجة مباشرة دون قص ثانٍ. **يلزم Android build جديد واختبار هاتف حقيقي.**
-- داخل الويب أو APK قديم: التقاط عدة صفحات بكاميرا المتصفح في جلسة واحدة.
-- استيراد عدة صور من المعرض.
-- اكتشاف حدود المستند آليًا باستخدام Sobel/Hough + quadrilateral scoring.
-- Edge snapping والتحقق من contrast والثبات الزمني.
-- Auto capture بعد تحقق الثقة والثبات.
-- مراجعة الحدود يدويًا عند انخفاض الثقة.
-- Perspective correction.
-- فلاتر Enhanced / Color / Black & White.
-- تدوير، حذف، إعادة ترتيب وتعديل crop لكل صفحة.
-- تصدير PDF متعدد الصفحات.
-- مسار Scan → PDF → Sign.
 
-### الاستخدام والحساب
-- Authentication عبر Supabase/Lovable Cloud.
-- RLS على البيانات الأساسية.
-- حصص استخدام يومية عبر `usage_days` و`entitlements`.
-- Paywall UI عند انتهاء الحصة.
 
-> الدفع الفعلي والاشتراكات التجارية غير منفذة حتى الآن. لا يعرض إصدار Android الحالي إعلانات ولا يطلب Advertising ID.
+Main Requirements:
 
-## ما لا يقدمه المنتج حاليًا
 
-التطبيق ينفذ **Electronic visual signature** (دمج صورة توقيع داخل PDF)، وليس توقيعًا رقميًا تشفيريًا قائمًا على شهادة.
 
-غير منفذ حاليًا:
-- PAdES / PKI / X.509 / trusted timestamp.
-- OCR وAI document recognition.
-- AI signature placement أو AI-generated signatures.
-- دعم كامل لـ DOCX/XLSX.
-- Billing فعلي (Stripe أو Google Play Billing).
-- Backend مستقل بـ NestJS/Redis/Docker.
+Core Features
 
-لا ينبغي تقديم هذه البنود كميزات موجودة قبل تنفيذها واختبارها.
 
-## البنية التقنية
 
-- React 19 + TypeScript
-- TanStack Start
-- Vite
-- Tailwind CSS + Radix/shadcn-style components
+- Upload and manage PDF, DOCX, XLSX, JPG, and PNG files.
+
+- Convert documents into a unified viewer.
+
+- Display document thumbnails and page navigation.
+
+- Allow users to create signatures by:
+
+  - Drawing by hand
+
+  - Typing with signature fonts
+
+  - Uploading signature images
+
+  - AI-generated signatures
+
+- Save multiple signatures per user.
+
+
+
+Signature Placement
+
+
+
+Allow users to:
+
+
+
+- Sign a single page.
+
+- Sign selected pages.
+
+- Sign all pages.
+
+- Sign odd pages.
+
+- Sign even pages.
+
+- Sign page ranges.
+
+- Drag-and-drop signatures.
+
+- Resize, rotate, and adjust opacity.
+
+
+
+Professional PDF Editor
+
+
+
+Include:
+
+
+
+- Zoom controls up to 800%.
+
+- Smart alignment guides.
+
+- Snap-to-grid system.
+
+- Page rotation.
+
+- Delete pages.
+
+- Rearrange pages.
+
+- Merge and split PDF documents.
+
+- Undo/Redo history.
+
+
+
+Interactive Fields
+
+
+
+Support:
+
+
+
+- Signature fields
+
+- Date fields
+
+- Text fields
+
+- Checkbox fields
+
+- Stamp fields
+
+- QR codes
+
+- Barcode fields
+
+
+
+AI Features
+
+
+
+Implement:
+
+
+
+- AI signature placement detection.
+
+- OCR document recognition.
+
+- Automatic field detection.
+
+- Document completion validation.
+
+- Smart signature suggestions.
+
+
+
+Security
+
+
+
+Implement enterprise-grade security:
+
+
+
+- AES-256 encryption
+
+- Digital certificates
+
+- Timestamp verification
+
+- Audit logs
+
+- Hash verification
+
+- Activity tracking
+
+- Role-based access control
+
+
+
+Dashboard
+
+
+
+Create a premium dashboard including:
+
+
+
+- Documents
+
+- Templates
+
+- Signatures
+
+- Teams
+
+- Certificates
+
+- Audit logs
+
+- Analytics
+
+- Settings
+
+
+
+UI/UX Requirements
+
+
+
+- Premium enterprise design.
+
+- Dark and light modes.
+
+- Glassmorphism effects.
+
+- Framer Motion animations.
+
+- Responsive design.
+
+- Drag-and-drop interactions.
+
+- Smooth transitions.
+
+- Professional typography.
+
+- Micro interactions.
+
+
+
+Technical Stack
+
+
+
+Frontend:
+
+
+
+- React
+
+- TypeScript
+
+- TailwindCSS
+
 - Framer Motion
+
 - PDF.js
-- pdf-lib
-- Supabase / PostgreSQL / RLS
-- Capacitor Android
 
-Android package:
+- Fabric.js
 
-```
-com.ahmedelmadni.waqqi
-```
 
-## المسارات الرئيسية
 
-- `/home`
-- `/scan`
-- `/signature`
-- `/settings`
-- `/account`
-- `/auth`
-- `/privacy`
-- `/terms`
+Backend:
 
-## الملفات الأهم
 
-| الملف | الوظيفة |
-|---|---|
-| `src/components/app/CameraCapture.tsx` | الكاميرا والكشف الحي |
-| `src/components/app/ScanCropper.tsx` | تعديل حدود الورقة |
-| `src/lib/precise-document-detect.ts` | كشف المستطيل |
-| `src/lib/document-refine.ts` | Edge snapping |
-| `src/lib/live-scan.ts` | الثقة والثبات |
-| `src/lib/scan.ts` | Perspective correction والفلاتر وPDF |
-| `src/lib/native-document-scanner.ts` | جسر Google ML Kit Android وقراءة الصور الأصلية |
-| `src/lib/native-document-scanner.test.ts` | اختبارات المسح الأصلي |
-| `src/lib/scan-settings.ts` | إعدادات جودة وأحجام المسح |
-| `src/routes/_authenticated/scan.tsx` | Scanner workflow |
-| `src/components/app/PdfSignWorkspace.tsx` | مساحة توقيع PDF |
-| `src/components/app/SignatureCapture.tsx` | إنشاء التوقيع |
-| `src/lib/sign-pdf.ts` | إنتاج PDF الموقع |
-| `src/lib/signatures.ts` | إدارة التوقيعات |
-| `src/lib/usage.ts` | الحصص اليومية |
-| `src/lib/pending-file.ts` | Scan → Sign |
-| `capacitor.config.ts` | Android shell |
-| `ANDROID.md` | تعليمات Android |
 
-## إعداد البيئة
+- Node.js
 
-استخدم `.env.example` كقالب، وأنشئ ملفًا محليًا مثل `.env.local`.
+- NestJS
 
-المتغيرات الأساسية:
+- PostgreSQL
 
-```env
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_your_key
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_PUBLISHABLE_KEY=sb_publishable_your_key
-```
+- Redis
 
-**مهم:** لا تضع `service_role` أو أي secret/private token داخل متغيرات `VITE_*` لأنها تصل إلى كود العميل.
+- Docker
 
-## التشغيل محليًا
 
-```bash
-npm ci
+
+Generate:
+
+
+
+1. Full application architecture.
+
+2. Database schema.
+
+3. UI/UX wireframes.
+
+4. Component structure.
+
+5. API architecture.
+
+6. Security architecture.
+
+7. User workflow diagrams.
+
+8. Complete implementation roadmap.
+
+9. Production deployment architecture.
+
+10. SaaS subscription model and billing system.
+
+This project was built with [Lovable](https://lovable.dev).
+
+**Live app**: https://signature-forge-vision.lovable.app
+
+## Build with Lovable
+
+Continue developing this project in the [Lovable editor](https://lovable.dev/projects/ab29f99d-ffe2-4ce8-982b-a3d244bd59c1).
+
+- **Ship faster**: describe what you want to build and Lovable handles the code.
+- **Stay in sync**: every change made in Lovable is committed straight to this repository.
+- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+
+## Development
+
+Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+
+```sh
+git clone <this-repository-url>
+cd <repository-name>
+npm i
 npm run dev
 ```
-
-## بوابة الجودة
-
-```bash
-npm run typecheck
-npm run lint
-npm run build
-npm run check
-```
-
-ولمزامنة Android:
-
-```bash
-npm run android:sync
-```
-
-يوجد GitHub Actions workflow في:
-
-```
-.github/workflows/ci.yml
-```
-
-ويشغّل TypeScript typecheck ثم lint ثم build، وبعد نجاحها يتحقق من Capacitor Android sync.
-
-## Production checklist
-
-قبل الإصدار التجاري يجب على الأقل:
-
-1. اختبار Scanner على Android حقيقي باستخدام آخر build.
-2. اختبار دقة الحواف على مجموعة صور واقعية متنوعة.
-3. اختبار الرجوع من Review إلى الكاميرا وعدم ظهور شاشة سوداء.
-4. اختبار 5 صفحات متتالية وScan → Sign → Save.
-5. مراجعة RLS وStorage policies وSupabase functions.
-6. مراجعة متغيرات البيئة والتأكد من عدم وجود أسرار في المستودع.
-7. اجتياز typecheck + lint + build + Android sync.
-8. اختبار PDFs الكبيرة والمشفرة والـrotation والـLandscape.
-9. فتح PDF النهائي في قارئ مستقل والتأكد من ظهور التوقيع بشكل صحيح.
-10. الإبقاء على Google Mobile Ads وميزة Advertising ID غير مفعّلين ما لم تُضف الإعلانات مستقبلًا بعد تحديث الخصوصية والموافقات.
-11. تشغيل مسار الإصدار الموقّع من GitHub Actions بعد إضافة Secrets الخاصة بمفتاح التوقيع والتحقق من APK/AAB الناتجين.
-12. اختبار حذف الحساب المباشر بعد تطبيق آخر migration على قاعدة الإنتاج.
-13. تنفيذ billing/entitlement validation فعليًا قبل بيع اشتراك.
-
-## ملاحظة عن Scanner
-
-معاينة الكاميرا الحالية تعتمد على:
-
-```
-Camera Stream → hidden video → Canvas Preview
-```
-
-وذلك لمعالجة مشكلة Black Video Surface على بعض Android WebViews. على Android تم الآن إدخال مسار ML Kit أصلي خارج WebView لتجنب الاعتماد على هذه المعاينة، بينما يبقى المسار الحالي للويب والأجهزة التي لا تتوافر فيها الإضافة. راجع `ANDROID.md` لبناء APK جديد وتجربة المسار الأصلي؛ نجاح بناء الويب وحده لا يؤكد تشغيل الماسح على هاتف حقيقي.
-
-## الروابط
-
-- التطبيق المنشور: https://signature-forge-vision.lovable.app
-- Lovable project: https://lovable.dev/projects/ab29f99d-ffe2-4ce8-982b-a3d244bd59c1
-
----
-
-هذا README يصف المنتج الموجود فعليًا، وليس الـVision القديمة للمشروع.

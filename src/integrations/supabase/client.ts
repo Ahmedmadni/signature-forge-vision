@@ -52,8 +52,6 @@ function createSupabaseClient() {
       storage: brokeredPreviewStorage(),
       persistSession: true,
       autoRefreshToken: true,
-      // Required to exchange the browser OAuth code after Android deep-link return.
-      flowType: "pkce",
     }
   });
 }

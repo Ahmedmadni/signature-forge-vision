@@ -6,9 +6,6 @@ const config: CapacitorConfig = {
   webDir: "dist/client",
   android: {
     allowMixedContent: false,
-    // Distinguish the packaged Android WebView from a normal browser even when
-    // a remote server URL is used and the native JS bridge fails to initialize.
-    appendUserAgent: " WaqqiAndroid/2.1",
   },
   server: {
     androidScheme: "https",

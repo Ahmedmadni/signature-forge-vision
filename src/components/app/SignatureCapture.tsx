@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { PenTool, Type, Upload, Eraser, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { prepareSignatureUpload } from "@/lib/signature-upload";
 
 const FONTS = [
   "'Segoe Script', 'Brush Script MT', cursive",
@@ -55,8 +54,6 @@ export function SignatureCapture({ onConfirm, saving, confirmLabel = "حفظ ا�
   const [typed, setTyped] = useState("");
   const [font, setFont] = useState(FONTS[0]);
   const [uploaded, setUploaded] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawing = useRef(false);
   const hasInk = useRef(false);
@@ -207,30 +204,20 @@ export function SignatureCapture({ onConfirm, saving, confirmLabel = "حفظ ا�
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                e.currentTarget.value = "";
                 if (!file) return;
-                setUploaded(null);
-                setUploadError(null);
-                setUploading(true);
-                void prepareSignatureUpload(file)
-                  .then((dataUrl) => setUploaded(dataUrl))
-                  .catch((error: unknown) => {
-                    setUploadError(error instanceof Error ? error.message : "تعذّرت معالجة صورة التوقيع.");
-                  })
-                  .finally(() => setUploading(false));
+                const reader = new FileReader();
+                reader.onload = () => setUploaded(String(reader.result));
+                reader.readAsDataURL(file);
               }}
             />
           </label>
-          {uploading && <p role="status" className="text-xs text-muted-foreground">جارٍ تجهيز صورة التوقيع للحفظ…</p>}
-          {uploadError && <p role="alert" className="text-xs text-destructive">{uploadError}</p>}
-          <p className="text-[11px] text-muted-foreground">تُصغَّر الصور الكبيرة تلقائيًا لتقليل استهلاك مساحة الجهاز، مع الحفاظ على شفافية PNG.</p>
         </div>
       )}
 
       <Button
         type="button"
         onClick={submit}
-        disabled={saving || uploading}
+        disabled={saving}
         className="w-full bg-gradient-brand text-primary-foreground shadow-glow"
       >
         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}

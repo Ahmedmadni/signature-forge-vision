@@ -74,7 +74,7 @@ function buildGradient(source: CanvasImageSource, sourceWidth: number, sourceHei
     }
   }
 
-  return { w, h, scale, gray, mag, gxArr, gyArr, maxMag };
+  return { w, h, scale, mag, gxArr, gyArr, maxMag };
 }
 
 function snapEdge(
@@ -82,7 +82,7 @@ function snapEdge(
   b: Pt,
   gradient: NonNullable<ReturnType<typeof buildGradient>>,
 ): Line2D {
-  const { w, h, gray, mag, gxArr, gyArr, maxMag } = gradient;
+  const { w, h, mag, gxArr, gyArr, maxMag } = gradient;
   const dx = b.x - a.x;
   const dy = b.y - a.y;
   const length = Math.hypot(dx, dy) || 1;
@@ -98,7 +98,6 @@ function snapEdge(
 
   for (let offset = -searchRadius; offset <= searchRadius; offset++) {
     let strength = 0;
-    let contrastStrength = 0;
     let continuity = 0;
     let used = 0;
 
@@ -125,31 +124,16 @@ function snapEdge(
         localBest = Math.max(localBest, value);
       }
 
-      const contrastDistance = 3;
-      const ax = Math.round(ix + nx * contrastDistance);
-      const ay = Math.round(iy + ny * contrastDistance);
-      const bx = Math.round(ix - nx * contrastDistance);
-      const by = Math.round(iy - ny * contrastDistance);
-      let contrast = 0;
-      if (
-        ax >= 0 && ay >= 0 && ax < w && ay < h &&
-        bx >= 0 && by >= 0 && bx < w && by < h
-      ) {
-        contrast = Math.abs(gray[ay * w + ax] - gray[by * w + bx]) / 255;
-      }
-
       strength += localBest;
-      contrastStrength += contrast;
-      if (localBest > 0.13 || contrast > 0.11) continuity += 1;
+      if (localBest > 0.13) continuity += 1;
       used += 1;
     }
 
     if (!used) continue;
     const avg = strength / used;
-    const avgContrast = contrastStrength / used;
     const continuous = continuity / used;
     const offsetPenalty = (Math.abs(offset) / Math.max(1, searchRadius)) * 0.055;
-    const score = avg * 0.56 + continuous * 0.28 + avgContrast * 0.16 - offsetPenalty;
+    const score = avg * 0.68 + continuous * 0.32 - offsetPenalty;
 
     if (score > bestScore) {
       bestScore = score;

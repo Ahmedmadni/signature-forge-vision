@@ -565,6 +565,7 @@ export type Database = {
           unlimited: boolean
         }[]
       }
+      delete_own_account: { Args: never; Returns: undefined }
       get_usage_status: {
         Args: never
         Returns: {

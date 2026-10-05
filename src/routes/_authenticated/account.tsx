@@ -1,14 +1,13 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { LogOut, Crown, Moon, Sun, Mail, Settings2, ChevronLeft, Trash2 } from "lucide-react";
+import { LogOut, Crown, Moon, Sun, Mail, Settings2, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/lib/use-auth";
 import { useUsage } from "@/lib/usage";
 import { useTheme } from "@/lib/theme";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Paywall } from "@/components/app/Paywall";
-import { getWaqqiAppInfo, type WaqqiAppInfo } from "@/lib/app-info";
 
 export const Route = createFileRoute("/_authenticated/account")({
   head: () => ({
@@ -25,22 +24,11 @@ export const Route = createFileRoute("/_authenticated/account")({
 });
 
 function AccountPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
   const usage = useUsage();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const [paywall, setPaywall] = useState(false);
-  const [appInfo, setAppInfo] = useState<WaqqiAppInfo | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    void getWaqqiAppInfo().then((info) => {
-      if (active) setAppInfo(info);
-    });
-    return () => {
-      active = false;
-    };
-  }, []);
 
   const used = usage.data?.pages_used ?? 0;
   const limit = usage.data?.daily_limit ?? 3;
@@ -52,41 +40,27 @@ function AccountPage() {
         <h1 className="font-display text-2xl font-semibold tracking-tight">حسابي</h1>
       </header>
 
-      <section className="space-y-3 rounded-3xl border border-border bg-card/60 p-4">
-        <div className="flex items-center gap-3">
-          <div className="grid h-11 w-11 place-items-center rounded-xl bg-gradient-brand text-primary-foreground">
-            <Mail className="h-5 w-5" />
-          </div>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium">
-              {authLoading ? "جارٍ معرفة حالة الحساب…" : user?.email ?? "أنت تستخدم وقِّع كضيف"}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {user ? (unlimited ? "الخطة المميزة" : "الخطة المجانية") : "لا تحتاج حسابًا للمسح والتوقيع والحفظ"}
-            </p>
-          </div>
+      <section className="flex items-center gap-3 rounded-3xl border border-border bg-card/60 p-4">
+        <div className="grid h-11 w-11 place-items-center rounded-xl bg-gradient-brand text-primary-foreground">
+          <Mail className="h-5 w-5" />
         </div>
-        {!authLoading && !user && (
-          <>
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              توقيعات الضيف محفوظة محليًا على هذا الجهاز فقط، ولا تُزامَن مع حسابك تلقائيًا. لا تحذف بيانات التطبيق إذا أردت الاحتفاظ بها.
-            </p>
-            <Button asChild className="w-full bg-gradient-brand text-primary-foreground shadow-glow">
-              <Link to="/auth">تسجيل الدخول أو إنشاء حساب (اختياري)</Link>
-            </Button>
-          </>
-        )}
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium">{user?.email ?? "—"}</p>
+          <p className="text-xs text-muted-foreground">
+            {unlimited ? "الخطة المميزة" : "الخطة المجانية"}
+          </p>
+        </div>
       </section>
 
       <section className="rounded-3xl border border-border bg-card/60 p-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold">{user ? "الاستخدام اليوم" : "الاستخدام اليوم على هذا الجهاز"}</h2>
+          <h2 className="text-sm font-semibold">الاستخدام اليوم</h2>
           <span className="text-xs text-muted-foreground">
             {unlimited ? "غير محدود" : `${used} / ${limit} صفحات`}
           </span>
         </div>
         <Progress className="mt-3" value={unlimited ? 100 : Math.min((used / limit) * 100, 100)} />
-        {user && !unlimited && (
+        {!unlimited && (
           <Button
             className="mt-4 w-full bg-gradient-brand text-primary-foreground shadow-glow"
             onClick={() => setPaywall(true)}
@@ -117,54 +91,15 @@ function AccountPage() {
           </span>
           <span className="text-xs text-muted-foreground">{theme === "dark" ? "داكن" : "فاتح"}</span>
         </button>
-        {user && (
-          <>
-            <Link
-              to="/delete-account"
-              className="flex w-full items-center justify-between rounded-2xl px-3 py-3 text-sm text-destructive hover:bg-muted/60"
-            >
-              <span className="flex items-center gap-2">
-                <Trash2 className="h-4 w-4" />
-                طلب حذف الحساب
-              </span>
-              <ChevronLeft className="h-4 w-4" />
-            </Link>
-            <button
-              onClick={async () => {
-                await supabase.auth.signOut();
-                navigate({ to: "/home" });
-              }}
-              className="flex w-full items-center gap-2 rounded-2xl px-3 py-3 text-sm text-destructive hover:bg-muted/60"
-            >
-              <LogOut className="h-4 w-4" /> تسجيل الخروج والاستمرار كضيف
-            </button>
-          </>
-        )}
-      </section>
-
-      <section className="rounded-3xl border border-border bg-card/60 p-2">
-        <Link
-          to="/privacy"
-          className="flex w-full items-center justify-between rounded-2xl px-3 py-3 text-sm hover:bg-muted/60"
+        <button
+          onClick={async () => {
+            await supabase.auth.signOut();
+            navigate({ to: "/auth" });
+          }}
+          className="flex w-full items-center gap-2 rounded-2xl px-3 py-3 text-sm text-destructive hover:bg-muted/60"
         >
-          <span>سياسة الخصوصية</span>
-          <ChevronLeft className="h-4 w-4 text-muted-foreground" />
-        </Link>
-        <Link
-          to="/terms"
-          className="flex w-full items-center justify-between rounded-2xl px-3 py-3 text-sm hover:bg-muted/60"
-        >
-          <span>الشروط والأحكام</span>
-          <ChevronLeft className="h-4 w-4 text-muted-foreground" />
-        </Link>
-        {appInfo?.native && (
-          <div className="flex items-center justify-between px-3 py-3 text-xs text-muted-foreground">
-            <span>إصدار التطبيق</span>
-            <span className="tabular-nums">
-              {appInfo.version ?? "غير متاح"}{appInfo.build ? ` (${appInfo.build})` : ""}
-            </span>
-          </div>
-        )}
+          <LogOut className="h-4 w-4" /> تسجيل الخروج
+        </button>
       </section>
 
       <Paywall open={paywall} onClose={() => setPaywall(false)} used={used} limit={limit} />
