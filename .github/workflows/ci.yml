@@ -89,12 +89,24 @@ jobs:
           chmod +x gradlew
           ./gradlew :app:assembleDebug --no-daemon
 
-      - name: Verify Android artifact version
+      - name: Verify Android artifact identity, version and permissions
+        shell: bash
         run: |
-          BADGING="$("$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging android/app/build/outputs/apk/debug/app-debug.apk | head -n 1)"
+          APK="android/app/build/outputs/apk/debug/app-debug.apk"
+          BADGING="$("$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK" | head -n 1)"
           echo "$BADGING"
+          echo "$BADGING" | grep -F "package: name='com.ahmedelmadni.waqqi'"
           echo "$BADGING" | grep -F "versionCode='$WAQQI_VERSION_CODE'"
           echo "$BADGING" | grep -F "versionName='$WAQQI_VERSION_NAME'"
+
+          PERMISSIONS="$("$ANDROID_HOME/build-tools/36.0.0/aapt" dump permissions "$APK")"
+          echo "$PERMISSIONS"
+          echo "$PERMISSIONS" | grep -F "android.permission.INTERNET"
+          echo "$PERMISSIONS" | grep -F "android.permission.CAMERA"
+          if echo "$PERMISSIONS" | grep -Fq "com.google.android.gms.permission.AD_ID"; then
+            echo "Advertising ID permission was merged into the final APK unexpectedly"
+            exit 1
+          fi
 
       - name: Upload Android debug APK
         uses: actions/upload-artifact@v4
