@@ -41,6 +41,12 @@ requireMatch(
   "Android version metadata must remain externally configurable.",
 );
 requireMatch(
+  gradle.includes("WAQQI_REQUIRE_SIGNED_RELEASE") &&
+    gradle.includes("WAQQI_KEYSTORE_PATH") &&
+    gradle.includes("WAQQI_KEY_ALIAS"),
+  "Android release signing must remain environment-driven and fail closed when required.",
+);
+requireMatch(
   gitignore.includes("*.jks") &&
     gitignore.includes("*.keystore") &&
     gitignore.includes("key.properties"),
