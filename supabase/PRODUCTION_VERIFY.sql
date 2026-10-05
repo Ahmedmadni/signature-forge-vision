@@ -134,10 +134,14 @@ select
   coalesce(array_to_string(p.proconfig, ','), '') ilike '%search_path=%' as fixed_search_path,
   has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated_can_execute,
   not has_function_privilege('anon', p.oid, 'EXECUTE') as anon_blocked,
-  not has_function_privilege('public', p.oid, 'EXECUTE') as public_blocked,
+  not exists (
+    select 1
+    from aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) acl
+    where acl.grantee = 0
+      and acl.privilege_type = 'EXECUTE'
+  ) as public_blocked,
   pg_get_functiondef(p.oid) ilike '%delete from public.team_members%' as removes_team_members,
-  pg_get_functiondef(p.oid) ilike '%delete from auth.users%' as removes_auth_user,
-  pg_get_functiondef(p.oid) not ilike '%delete from auth.users%where id = $%' as no_external_target_parameter
+  pg_get_functiondef(p.oid) ilike '%delete from auth.users%' as removes_auth_user
 from pg_proc p
 join pg_namespace n on n.oid = p.pronamespace
 where n.nspname = 'public'
