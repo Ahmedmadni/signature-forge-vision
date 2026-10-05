@@ -67,6 +67,48 @@ function drawToCanvas(
   return { canvas, ctx };
 }
 
+/** Use the complete image for pages already cropped by an Android native scanner. */
+export function fullImageQuad(w: number, h: number): Quad {
+  return [
+    { x: 0, y: 0 },
+    { x: Math.max(1, w - 1), y: 0 },
+    { x: Math.max(1, w - 1), y: Math.max(1, h - 1) },
+    { x: 0, y: Math.max(1, h - 1) },
+  ];
+}
+
+/**
+ * Native ML Kit output is already cropped and straightened. Preserve its pixels
+ * rather than performing a second perspective transform or document filter.
+ */
+export function renderProcessedPage(
+  source: CanvasImageSource,
+  sourceWidth: number,
+  sourceHeight: number,
+  rotation: 0 | 90 | 180 | 270 = 0,
+  maxSize = MAX_OUTPUT,
+): HTMLCanvasElement {
+  const scale = Math.min(1, maxSize / Math.max(sourceWidth, sourceHeight));
+  const w = Math.max(1, Math.round(sourceWidth * scale));
+  const h = Math.max(1, Math.round(sourceHeight * scale));
+
+  const canvas = document.createElement("canvas");
+  const swap = rotation === 90 || rotation === 270;
+  canvas.width = swap ? h : w;
+  canvas.height = swap ? w : h;
+
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("canvas-unavailable");
+  context.fillStyle = "#fff";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+  context.translate(canvas.width / 2, canvas.height / 2);
+  context.rotate((rotation * Math.PI) / 180);
+  context.drawImage(source, -w / 2, -h / 2, w, h);
+  return canvas;
+}
+
 export function defaultQuad(w: number, h: number): Quad {
   const mx = w * 0.06;
   const my = h * 0.06;

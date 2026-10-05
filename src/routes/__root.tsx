@@ -18,6 +18,8 @@ import { ThemeProvider, themeInitScript } from "../lib/theme";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { watchNativeAuthLinks } from "@/lib/native-auth";
+import { toast } from "sonner";
 
 function NotFoundComponent() {
   return (
@@ -128,11 +130,41 @@ function RootComponent() {
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      router.invalidate();
-      if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
+      // Identity-scoped queries must be refreshed when entering or leaving
+      // an account. Never expose cached cloud signatures to the next guest.
+      if (event === "SIGNED_OUT") {
+        queryClient.removeQueries({ queryKey: ["signatures"] });
+        queryClient.removeQueries({ queryKey: ["usage"] });
+      }
+      void queryClient.invalidateQueries();
+      void router.invalidate();
     });
     return () => sub.subscription.unsubscribe();
   }, [router, queryClient]);
+
+  useEffect(() => {
+    let disposed = false;
+    let cleanup: (() => Promise<void>) | undefined;
+    void watchNativeAuthLinks(
+      () => {
+        if (disposed) return;
+        void router.invalidate().then(() => router.navigate({ to: "/home" }));
+        toast.success("تم تسجيل الدخول داخل تطبيق وقِّع");
+      },
+      (message) => {
+        if (!disposed) toast.error(message);
+      },
+    ).then((release) => {
+      if (disposed) void release();
+      else cleanup = release;
+    }).catch(() => {
+      if (!disposed) toast.error("تعذّر تفعيل العودة إلى التطبيق بعد تسجيل الدخول");
+    });
+    return () => {
+      disposed = true;
+      if (cleanup) void cleanup();
+    };
+  }, [router]);
 
   return (
     <QueryClientProvider client={queryClient}>

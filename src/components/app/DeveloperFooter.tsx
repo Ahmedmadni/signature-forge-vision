@@ -21,6 +21,8 @@ export function DeveloperFooter({ className = "" }: { className?: string }) {
         <Link to="/privacy" className="hover:text-foreground">سياسة الخصوصية</Link>
         <span>·</span>
         <Link to="/terms" className="hover:text-foreground">شروط الاستخدام</Link>
+        <span>·</span>
+        <Link to="/delete-account" className="hover:text-foreground">حذف الحساب</Link>
       </div>
     </footer>
   );

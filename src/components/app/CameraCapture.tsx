@@ -5,7 +5,7 @@ import { ScanCropper } from "@/components/app/ScanCropper";
 import { playSfx, haptic } from "@/lib/sfx";
 import { analyzeDocumentFrame, blendQuads, quadDistance } from "@/lib/live-scan";
 import { defaultQuad, loadImage, type Quad } from "@/lib/scan";
-import { detectDocumentPrecise } from "@/lib/precise-document-detect";
+import { detectDocumentRefined } from "@/lib/document-refine";
 
 interface Props {
   open: boolean;
@@ -24,6 +24,8 @@ interface ViewBox {
 /** كاميرا ماسح ضوئي مع كشف حي، تثبيت للحواف، والتقاط تلقائي. */
 export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, onCapture }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const previewCanvasRef = useRef<HTMLCanvasElement>(null);
+  const analysisCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const lastRawQuadRef = useRef<Quad | null>(null);
@@ -35,7 +37,7 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
   const autoArmedRef = useRef(true);
   const capturingRef = useRef(false);
   const detectorBusyRef = useRef(false);
-  const reviewRef = useRef(false);
+  const qualityRef = useRef({ confidence: 0, edgeScore: 0 });
 
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
@@ -45,6 +47,7 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
   const [confidence, setConfidence] = useState(0);
   const [edgeScore, setEdgeScore] = useState(0);
   const [stableFrames, setStableFrames] = useState(0);
+  const [autoCaptureEnabled, setAutoCaptureEnabled] = useState(false);
   const [viewBox, setViewBox] = useState<ViewBox>({ width: 0, height: 0 });
   const [review, setReview] = useState<{
     blob: Blob;
@@ -53,20 +56,6 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
     height: number;
     quad: Quad;
   } | null>(null);
-
-  reviewRef.current = review !== null;
-  const [confirming, setConfirming] = useState(false);
-
-  const confirmReview = async () => {
-    if (!review) return;
-    setConfirming(true);
-    try {
-      await onCapture(review.blob, review.quad);
-      setReview(null);
-    } finally {
-      setConfirming(false);
-    }
-  };
 
   const shoot = useCallback(
     async (automatic = false) => {
@@ -94,22 +83,36 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
         });
 
         const captureQuad = latestQuadRef.current ?? undefined;
+        const quality = qualityRef.current;
         capturedQuadRef.current = captureQuad ?? null;
         autoArmedRef.current = false;
         stableFramesRef.current = 0;
         setStableFrames(0);
-        const image = await loadImage(blob);
-        const w = canvas.width;
-        const h = canvas.height;
-        const quad =
-          captureQuad ?? detectDocumentPrecise(image as CanvasImageSource, w, h)?.quad ?? defaultQuad(w, h);
-        setReview({ blob, image: image as CanvasImageSource, width: w, height: h, quad });
+
+        // اللقطة التلقائية الموثوقة تُضاف فورًا. اللقطة الضعيفة تُراجع قبل القص.
+        if (automatic && captureQuad && quality.confidence >= 0.80 && quality.edgeScore >= 0.62) {
+          await onCapture(blob, captureQuad);
+        } else {
+          const image = await loadImage(blob);
+          const width = "width" in image ? Number(image.width) : 0;
+          const height = "height" in image ? Number(image.height) : 0;
+          if (!width || !height) throw new Error("invalid-capture");
+
+          const detection = detectDocumentRefined(image as CanvasImageSource, width, height);
+          setReview({
+            blob,
+            image: image as CanvasImageSource,
+            width,
+            height,
+            quad: detection?.quad ?? defaultQuad(width, height),
+          });
+        }
       } finally {
         capturingRef.current = false;
         setCapturing(false);
       }
     },
-    [],
+    [onCapture],
   );
 
   useEffect(() => {
@@ -117,6 +120,7 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
     let cancelled = false;
     setError(null);
     setReady(false);
+    setAutoCaptureEnabled(false);
     setDetectedQuad(null);
     setConfidence(0);
     setEdgeScore(0);
@@ -137,8 +141,9 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
       .getUserMedia({
         video: {
           facingMode: { ideal: "environment" },
-          width: { ideal: 3840 },
-          height: { ideal: 2160 },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          frameRate: { ideal: 24, max: 30 },
         },
         audio: false,
       })
@@ -149,6 +154,33 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
         }
 
         streamRef.current = stream;
+
+        const track = stream.getVideoTracks()[0];
+        if (track) {
+          try {
+            track.contentHint = "detail";
+          } catch {
+            // بعض WebView لا تدعم contentHint.
+          }
+
+          try {
+            const capabilities = track.getCapabilities?.() as MediaTrackCapabilities & {
+              focusMode?: string[];
+              exposureMode?: string[];
+              whiteBalanceMode?: string[];
+            };
+            const advanced: Record<string, unknown> = {};
+            if (capabilities?.focusMode?.includes("continuous")) advanced.focusMode = "continuous";
+            if (capabilities?.exposureMode?.includes("continuous")) advanced.exposureMode = "continuous";
+            if (capabilities?.whiteBalanceMode?.includes("continuous")) advanced.whiteBalanceMode = "continuous";
+            if (Object.keys(advanced).length) {
+              await track.applyConstraints({ advanced: [advanced as MediaTrackConstraintSet] });
+            }
+          } catch {
+            // لا نعطّل الماسح إذا لم يدعم الجهاز قيود التركيز/الإضاءة المتقدمة.
+          }
+        }
+
         const video = videoRef.current;
         if (!video) return;
 
@@ -174,6 +206,21 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
   }, [open]);
 
   useEffect(() => {
+    if (!open || review) return;
+    const video = videoRef.current;
+    const stream = streamRef.current;
+    if (!video || !stream) return;
+
+    if (video.srcObject !== stream) video.srcObject = stream;
+    video.muted = true;
+    video.playsInline = true;
+    void video.play().catch(() => {
+      // onCanPlay/onPlaying will mark the preview ready when WebView resumes painting.
+    });
+  }, [open, review]);
+
+  useEffect(() => {
+    if (review) return;
     const element = viewportRef.current;
     if (!element) return;
     const update = () => setViewBox({ width: element.clientWidth, height: element.clientHeight });
@@ -181,20 +228,87 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
     observer.observe(element);
     update();
     return () => observer.disconnect();
-  }, [open]);
+  }, [open, review]);
+
+  // نرسم المعاينة على Canvas بدل الاعتماد على رسم <video> داخل Android WebView.
+  // هذا يمنع الشاشة السوداء على بعض الأجهزة ويضمن نفس هندسة object-contain المستخدمة للـoverlay.
+  useEffect(() => {
+    if (!open || !ready || review) return;
+
+    let frame = 0;
+    let lastPaint = 0;
+    const paint = (time: number) => {
+      frame = window.requestAnimationFrame(paint);
+      if (time - lastPaint < 42) return; // حتى 24 إطارًا/ثانية لتخفيف الحمل
+      lastPaint = time;
+
+      const video = videoRef.current;
+      const canvas = previewCanvasRef.current;
+      if (!video || !canvas || video.readyState < 2 || !video.videoWidth || !video.videoHeight) return;
+      if (!viewBox.width || !viewBox.height) return;
+
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.25);
+      const pixelWidth = Math.max(1, Math.round(viewBox.width * dpr));
+      const pixelHeight = Math.max(1, Math.round(viewBox.height * dpr));
+      if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
+        canvas.width = pixelWidth;
+        canvas.height = pixelHeight;
+      }
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, viewBox.width, viewBox.height);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+
+      const scale = Math.min(viewBox.width / video.videoWidth, viewBox.height / video.videoHeight);
+      const drawWidth = video.videoWidth * scale;
+      const drawHeight = video.videoHeight * scale;
+      const offsetX = (viewBox.width - drawWidth) / 2;
+      const offsetY = (viewBox.height - drawHeight) / 2;
+      ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, offsetX, offsetY, drawWidth, drawHeight);
+    };
+
+    frame = window.requestAnimationFrame(paint);
+    return () => window.cancelAnimationFrame(frame);
+  }, [open, ready, review, viewBox]);
 
   useEffect(() => {
-    if (!open || !ready) return;
+    if (!open || !ready || review) return;
     let disposed = false;
 
     const timer = window.setInterval(() => {
-      if (disposed || detectorBusyRef.current || capturingRef.current || reviewRef.current) return;
+      if (disposed || detectorBusyRef.current || capturingRef.current) return;
       const video = videoRef.current;
       if (!video || video.readyState < 2 || !video.videoWidth || !video.videoHeight) return;
 
       detectorBusyRef.current = true;
       try {
-        const result = analyzeDocumentFrame(video, video.videoWidth, video.videoHeight);
+        // Analyze downscaled frames to keep the WebView responsive.
+        // Retain full sensor resolution for capturing the final photo.
+        const preview = analysisCanvasRef.current ?? document.createElement("canvas");
+        analysisCanvasRef.current = preview;
+        const ratio = Math.min(1, 380 / Math.max(video.videoWidth, video.videoHeight));
+        const pw = Math.max(1, Math.round(video.videoWidth * ratio));
+        const ph = Math.max(1, Math.round(video.videoHeight * ratio));
+        if (preview.width !== pw) preview.width = pw;
+        if (preview.height !== ph) preview.height = ph;
+        const context = preview.getContext("2d", { willReadFrequently: true });
+        if (!context) return;
+        context.drawImage(video, 0, 0, pw, ph);
+        const analyzed = analyzeDocumentFrame(preview, pw, ph);
+        const result = analyzed.quad
+          ? {
+              ...analyzed,
+              quad: analyzed.quad.map((p) => ({
+                x: p.x * video.videoWidth / pw,
+                y: p.y * video.videoHeight / ph,
+              })) as Quad,
+            }
+          : analyzed;
+        qualityRef.current = { confidence: result.confidence, edgeScore: result.edgeScore };
         setConfidence(result.confidence);
         setEdgeScore(result.edgeScore);
 
@@ -233,17 +347,16 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
           if (moved > 0.055) autoArmedRef.current = true;
         }
 
-        const strongDetection = result.stableEnough && result.confidence >= 0.72 && result.edgeScore >= 0.54;
-        if (strongDetection && movement < 0.0085) {
+        const strongDetection = result.stableEnough && result.confidence >= 0.8 && result.edgeScore >= 0.62;
+        if (strongDetection && movement < 0.006) {
           stableFramesRef.current += 1;
-        } else if (movement < 0.014 && result.confidence >= 0.68) {
-          stableFramesRef.current = Math.max(0, stableFramesRef.current);
         } else {
-          stableFramesRef.current = Math.max(0, stableFramesRef.current - 1);
+          // Never reuse an old stability count when edges become unreliable.
+          stableFramesRef.current = 0;
         }
         setStableFrames(stableFramesRef.current);
 
-        if (autoArmedRef.current && stableFramesRef.current >= 5) {
+        if (autoCaptureEnabled && autoArmedRef.current && stableFramesRef.current >= 8) {
           autoArmedRef.current = false;
           stableFramesRef.current = 0;
           setStableFrames(0);
@@ -252,23 +365,23 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
       } finally {
         detectorBusyRef.current = false;
       }
-    }, 280);
+    }, 600);
 
     return () => {
       disposed = true;
       window.clearInterval(timer);
     };
-  }, [open, ready, shoot]);
+  }, [open, ready, review, shoot, autoCaptureEnabled]);
 
   /**
-   * الفيديو معروض بـ object-cover، لذلك يجب تطبيق نفس scale/crop على حدود الكشف.
-   * هذه النقطة تمنع انزياح الـ overlay عن الورقة على شاشات الهواتف الطويلة.
+   * نعرض الفريم كاملًا بـ object-contain حتى لا تُقص أطراف الورقة.
+   * المساحات المتبقية بيضاء، لذلك لا توجد أشرطة سوداء، والـoverlay يستخدم نفس التحويل.
    */
   const overlayPoints = useMemo(() => {
     const video = videoRef.current;
     if (!detectedQuad || !video || !viewBox.width || !viewBox.height || !video.videoWidth || !video.videoHeight) return "";
 
-    const scale = Math.max(viewBox.width / video.videoWidth, viewBox.height / video.videoHeight);
+    const scale = Math.min(viewBox.width / video.videoWidth, viewBox.height / video.videoHeight);
     const drawWidth = video.videoWidth * scale;
     const drawHeight = video.videoHeight * scale;
     const offsetX = (viewBox.width - drawWidth) / 2;
@@ -284,36 +397,126 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
   }, [detectedQuad, viewBox]);
 
   if (!open) return null;
-  const progress = Math.min(1, stableFrames / 5);
-  const locked = progress >= 0.8;
+
+  const releaseReviewImage = () => {
+    const image = review?.image;
+    if (image && "close" in image && typeof image.close === "function") {
+      image.close();
+    }
+  };
+
+  if (review) {
+    return (
+      <div className="fixed inset-x-0 top-0 z-50 flex h-[100dvh] max-h-[100dvh] min-h-0 flex-col overflow-hidden bg-white text-slate-950" style={{ paddingTop: "env(safe-area-inset-top)" }}>
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white p-3">
+          <div>
+            <p className="text-sm font-semibold">مراجعة حدود الصفحة</p>
+            <p className="text-xs text-slate-500">حرّك الزوايا فقط إذا لم تلتصق بالورقة بدقة.</p>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              releaseReviewImage();
+              setReview(null);
+              autoArmedRef.current = true;
+            }}
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-auto bg-slate-100 p-3">
+          <ScanCropper
+            image={review.image}
+            imageWidth={review.width}
+            imageHeight={review.height}
+            quad={review.quad}
+            onChange={(quad) => setReview((current) => (current ? { ...current, quad } : current))}
+          />
+        </div>
+
+        <div className="shrink-0 space-y-2 border-t border-slate-200 bg-white p-3" style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                const detection = detectDocumentRefined(review.image, review.width, review.height);
+                setReview((current) =>
+                  current
+                    ? { ...current, quad: detection?.quad ?? defaultQuad(current.width, current.height) }
+                    : current,
+                );
+              }}
+            >
+              <Wand2 className="h-4 w-4" />
+              إعادة الكشف
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                releaseReviewImage();
+                setReview(null);
+                autoArmedRef.current = true;
+              }}
+            >
+              <RefreshCcw className="h-4 w-4" />
+              إعادة التصوير
+            </Button>
+          </div>
+
+          <Button
+            className="w-full bg-blue-600 text-white hover:bg-blue-700"
+            onClick={async () => {
+              const current = review;
+              await onCapture(current.blob, current.quad);
+              releaseReviewImage();
+              setReview(null);
+              autoArmedRef.current = false;
+            }}
+          >
+            <Check className="h-4 w-4" />
+            اعتماد الصفحة
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const status = !ready
     ? "جارٍ تشغيل الكاميرا…"
     : !detectedQuad
-      ? "ضع الورقة كاملة داخل الكاميرا وعلى خلفية واضحة"
-      : confidence < 0.64 || edgeScore < 0.48
-        ? "حرّك الهاتف قليلًا حتى تظهر الحواف الأربع بوضوح"
-        : stableFrames < 4
-          ? "تم اكتشاف الورقة — ثبّت الهاتف قليلًا"
-          : "الحدود ثابتة — سيتم الالتقاط تلقائيًا";
+      ? "ضع الورقة كاملة داخل الإطار"
+      : !autoCaptureEnabled
+        ? "اضغط زر التصوير لمراجعة الحدود قبل الحفظ"
+        : confidence < 0.8 || edgeScore < 0.62
+          ? "الحواف غير مكتملة — لن يتم الالتقاط"
+          : stableFrames < 8
+            ? `ثبّت الهاتف: ${Math.max(0, 8 - stableFrames)} قراءات متبقية`
+            : "تم تأكيد الحواف — جارٍ التصوير";
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-white text-slate-950 dark:bg-slate-950 dark:text-white">
-      <div className="flex items-center justify-between border-b border-slate-200 bg-white/95 p-3 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
+    <div className="fixed inset-x-0 top-0 z-50 flex h-[100dvh] max-h-[100dvh] min-h-0 flex-col overflow-hidden bg-white text-slate-950" style={{ paddingTop: "env(safe-area-inset-top)" }}>
+      <div className="flex shrink-0 items-center justify-between border-b border-slate-200 bg-white/95 p-3 backdrop-blur">
         <div>
-          <p className="text-sm font-semibold">المسح الذكي التلقائي</p>
-          <p className="text-xs text-slate-500 dark:text-slate-400">يتم تحديد الحواف الأربع ثم تصحيح المنظور تلقائيًا</p>
+          <p className="text-sm font-semibold">ماسح المستندات</p>
+          <p className="text-xs text-slate-500">الكشف الحي مساعد؛ التصوير يدوي حتى تفعيل الوضع التلقائي</p>
         </div>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <X className="h-5 w-5" />
         </Button>
       </div>
 
-      <div className="relative flex-1 overflow-hidden bg-slate-100 p-2 dark:bg-slate-900">
+      <div className="relative min-h-0 flex-1 overflow-hidden bg-slate-100 p-2">
         <div
           ref={viewportRef}
-          className="relative h-full min-h-[320px] overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-elegant dark:border-slate-700"
+          className="relative h-full min-h-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-elegant"
         >
+          <canvas
+            ref={previewCanvasRef}
+            className="absolute inset-0 h-full w-full bg-white"
+            aria-label="معاينة الكاميرا"
+          />
           <video
             ref={videoRef}
             autoPlay
@@ -322,7 +525,8 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
             disablePictureInPicture
             onCanPlay={() => setReady(true)}
             onPlaying={() => setReady(true)}
-            className="absolute inset-0 h-full w-full bg-white object-cover dark:bg-slate-900"
+            className="pointer-events-none absolute inset-0 h-full w-full opacity-0"
+            aria-hidden="true"
           />
 
           {overlayPoints && (
@@ -333,10 +537,9 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
             >
               <polygon
                 points={overlayPoints}
-                fill={locked ? "rgb(34 197 94 / 0.16)" : "rgb(59 130 246 / 0.12)"}
-                stroke={locked ? "rgb(22 163 74)" : "rgb(37 99 235)"}
-                strokeWidth="5"
-                className="animate-pulse"
+                fill="rgb(59 130 246 / 0.06)"
+                stroke="rgb(37 99 235)"
+                strokeWidth="3"
                 strokeLinejoin="round"
                 vectorEffect="non-scaling-stroke"
               />
@@ -347,9 +550,9 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
                     key={index}
                     cx={cx}
                     cy={cy}
-                    r="10"
+                    r="6"
                     fill="white"
-                    stroke={locked ? "rgb(22 163 74)" : "rgb(37 99 235)"}
+                    stroke="rgb(37 99 235)"
                     strokeWidth="3"
                     vectorEffect="non-scaling-stroke"
                   />
@@ -372,16 +575,8 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
             {detectedQuad ? `${Math.round(confidence * 100)}%` : "بحث"}
           </div>
 
-          <div className="absolute bottom-4 left-1/2 max-w-[85%] -translate-x-1/2 rounded-2xl border border-white/60 bg-white/92 px-4 py-2 text-center text-xs font-medium text-slate-900 shadow-md backdrop-blur">
+          <div className="absolute bottom-4 left-1/2 max-w-[85%] -translate-x-1/2 rounded-full border border-white/60 bg-white/92 px-4 py-2 text-center text-xs font-medium text-slate-900 shadow-md backdrop-blur">
             {status}
-            {detectedQuad && (
-              <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
-                <div
-                  className={`h-full rounded-full transition-all duration-300 ${locked ? "bg-green-600" : "bg-blue-600"}`}
-                  style={{ width: `${Math.max(8, progress * 100)}%` }}
-                />
-              </div>
-            )}
           </div>
 
           {lastPreview && (
@@ -406,16 +601,29 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
         </div>
       </div>
 
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 border-t border-slate-200 bg-white/95 px-4 py-4 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
-        <div className="justify-self-start text-xs text-slate-500 dark:text-slate-400">
-          {detectedQuad ? "الحواف محددة تلقائيًا" : "اترك مساحة صغيرة حول الورقة"}
+      <div className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2 border-t border-slate-200 bg-white/95 px-3 py-2 backdrop-blur" style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}>
+        <div className="flex min-w-0 flex-col gap-2 justify-self-start text-[11px] leading-tight text-slate-600">
+          <label className="flex items-center gap-1">
+            <input
+              type="checkbox"
+              checked={autoCaptureEnabled}
+              onChange={(event) => {
+                setAutoCaptureEnabled(event.target.checked);
+                stableFramesRef.current = 0;
+                setStableFrames(0);
+              }}
+              className="h-4 w-4 accent-blue-600"
+            />
+            تلقائي
+          </label>
+          <span>{detectedQuad ? "راجع الحدود بعد التصوير" : "قرب المستند"}</span>
         </div>
 
         <button
           onClick={() => void shoot(false)}
           disabled={!ready || capturing}
           aria-label="التقاط صفحة يدويًا"
-          className="press grid h-20 w-20 place-items-center rounded-full border-4 border-blue-100 bg-blue-600 shadow-lg disabled:opacity-40"
+          className="press grid h-16 w-16 place-items-center rounded-full border-4 border-blue-100 bg-blue-600 shadow-lg disabled:opacity-40"
         >
           {capturing ? <Loader2 className="h-7 w-7 animate-spin text-white" /> : <Camera className="h-7 w-7 text-white" />}
         </button>
@@ -425,50 +633,6 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
           تم
         </Button>
       </div>
-      {review && (
-        <div className="absolute inset-0 z-10 flex flex-col gap-3 overflow-y-auto bg-white p-3 dark:bg-slate-950">
-          <div>
-            <p className="text-sm font-semibold">راجع حدود الصفحة</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">حرّك الزوايا عند الحاجة، ثم أكّد ليتم قص المنطقة المحددة فقط.</p>
-          </div>
-          <ScanCropper
-            image={review.image}
-            imageWidth={review.width}
-            imageHeight={review.height}
-            quad={review.quad}
-            onChange={(quad) => setReview((r) => (r ? { ...r, quad } : r))}
-          />
-          <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant="outline" onClick={() => setReview(null)} disabled={confirming}>
-              <RefreshCcw className="h-4 w-4" /> إعادة الالتقاط
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() =>
-                setReview((r) => {
-                  if (!r) return r;
-                  const d = detectDocumentPrecise(r.image, r.width, r.height);
-                  return d ? { ...r, quad: d.quad } : r;
-                })
-              }
-            >
-              <Wand2 className="h-4 w-4" /> إعادة الكشف
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setReview((r) => (r ? { ...r, quad: defaultQuad(r.width, r.height) } : r))}
-            >
-              الصورة كاملة
-            </Button>
-          </div>
-          <Button size="lg" onClick={() => void confirmReview()} disabled={confirming} className="w-full">
-            {confirming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-            تأكيد وقص المنطقة
-          </Button>
-        </div>
-      )}
     </div>
   );
 }

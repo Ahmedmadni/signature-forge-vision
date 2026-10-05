@@ -43,12 +43,12 @@ export function analyzeDocumentFrame(
   }
 
   // لا نظهر رباعي ضعيف لمجرد وجود بعض الخطوط في الخلفية.
-  const detected = detection.confidence >= 0.54 && detection.edgeScore >= 0.42;
+  const detected = detection.confidence >= 0.6 && detection.edgeScore >= 0.48;
   return {
     quad: detection.quad,
     confidence: detection.confidence,
     edgeScore: detection.edgeScore,
     detected,
-    stableEnough: detected && detection.confidence >= 0.7 && detection.edgeScore >= 0.52,
+    stableEnough: detected && detection.confidence >= 0.74 && detection.edgeScore >= 0.56,
   };
 }
