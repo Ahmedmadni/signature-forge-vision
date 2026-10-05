@@ -46,7 +46,7 @@ const sections = [
   },
   {
     t: "حذف الحساب",
-    b: "يمكنك طلب حذف الحساب والبيانات المرتبطة به من صفحة «حذف الحساب» داخل التطبيق أو من رابط الويب المخصص. الملفات والتوقيعات المحفوظة محليًا على جهازك لا تُحذف تلقائيًا عند حذف الحساب.",
+    b: "يمكن للمستخدم المسجّل حذف حسابه وبياناته السحابية مباشرة من صفحة «حذف الحساب» بعد التحقق من الجلسة، مع توفير قناة دعم إذا تعذّر تسجيل الدخول. الملفات والتوقيعات المحفوظة محليًا على جهازك لا تُحذف تلقائيًا عند حذف الحساب.",
   },
 ];
 
@@ -67,7 +67,7 @@ function PrivacyPage() {
         ))}
       </div>
       <div className="mt-8 rounded-2xl border border-border bg-card/60 p-4 text-sm">
-        <Link to="/delete-account" className="font-medium text-primary hover:underline">طلب حذف الحساب والبيانات المرتبطة به</Link>
+        <Link to="/delete-account" className="font-medium text-primary hover:underline">حذف الحساب والبيانات المرتبطة به</Link>
       </div>
       <DeveloperFooter className="mt-8" />
     </div>
