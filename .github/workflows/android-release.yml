@@ -106,7 +106,7 @@ jobs:
           fi
 
       - name: Verify signed Play AAB
-        run: jarsigner -verify -verbose -certs android/app/build/outputs/bundle/release/app-release.aab
+        run: jarsigner -verify -strict -verbose -certs android/app/build/outputs/bundle/release/app-release.aab
 
       - name: Upload signed release APK
         uses: actions/upload-artifact@v4
