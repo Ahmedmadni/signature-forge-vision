@@ -73,8 +73,8 @@
 - [ ] اختيار `versionName` التجاري النهائي.
 - [ ] Play App Signing أو keystore إنتاجي خارج Git.
 - [ ] بناء AAB موقّع.
-- [ ] استبدال AdMob test App ID إذا كانت الإعلانات ستُفعّل.
-- [ ] إعداد consent/privacy للإعلانات.
+- [x] إزالة AdMob test ID وGoogle Mobile Ads SDK وAdvertising ID من الإصدار الحالي.
+- [ ] إذا أضيفت الإعلانات مستقبلًا: تنفيذ SDK/consent/privacy/Data Safety كميزة مستقلة قبل الإصدار التالي.
 - [ ] Google Play Data Safety.
 - [ ] screenshots / feature graphic / store description / content rating.
 - [ ] تفعيل Billing فقط عند تنفيذ purchase verification + restore + entitlement sync.
