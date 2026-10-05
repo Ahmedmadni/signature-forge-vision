@@ -10,14 +10,6 @@
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="false">
 
-        <!-- AdMob: استبدل القيمة بمعرّف تطبيقك من AdMob قبل النشر -->
-        <meta-data
-            android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713" />
-        <meta-data
-            android:name="com.google.android.gms.ads.DELAY_APP_MEASUREMENT_INIT"
-            android:value="true" />
-
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
             android:name=".MainActivity"
@@ -58,8 +50,6 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <!-- مطلوب لإعلانات AdMob على أندرويد 13+ -->
-    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
     <!-- مطلوب للماسح الضوئي (التصوير بالكاميرا) -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
