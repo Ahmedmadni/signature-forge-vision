@@ -35,6 +35,7 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
   const autoArmedRef = useRef(true);
   const capturingRef = useRef(false);
   const detectorBusyRef = useRef(false);
+  const reviewRef = useRef(false);
 
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
@@ -52,6 +53,20 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
     height: number;
     quad: Quad;
   } | null>(null);
+
+  reviewRef.current = review !== null;
+  const [confirming, setConfirming] = useState(false);
+
+  const confirmReview = async () => {
+    if (!review) return;
+    setConfirming(true);
+    try {
+      await onCapture(review.blob, review.quad);
+      setReview(null);
+    } finally {
+      setConfirming(false);
+    }
+  };
 
   const shoot = useCallback(
     async (automatic = false) => {
@@ -94,7 +109,7 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
         setCapturing(false);
       }
     },
-    [onCapture],
+    [],
   );
 
   useEffect(() => {
@@ -173,7 +188,7 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
     let disposed = false;
 
     const timer = window.setInterval(() => {
-      if (disposed || detectorBusyRef.current || capturingRef.current) return;
+      if (disposed || detectorBusyRef.current || capturingRef.current || reviewRef.current) return;
       const video = videoRef.current;
       if (!video || video.readyState < 2 || !video.videoWidth || !video.videoHeight) return;
 
@@ -269,6 +284,8 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
   }, [detectedQuad, viewBox]);
 
   if (!open) return null;
+  const progress = Math.min(1, stableFrames / 5);
+  const locked = progress >= 0.8;
 
   const status = !ready
     ? "جارٍ تشغيل الكاميرا…"
@@ -316,9 +333,10 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
             >
               <polygon
                 points={overlayPoints}
-                fill="rgb(59 130 246 / 0.06)"
-                stroke="rgb(37 99 235)"
-                strokeWidth="3"
+                fill={locked ? "rgb(34 197 94 / 0.16)" : "rgb(59 130 246 / 0.12)"}
+                stroke={locked ? "rgb(22 163 74)" : "rgb(37 99 235)"}
+                strokeWidth="5"
+                className="animate-pulse"
                 strokeLinejoin="round"
                 vectorEffect="non-scaling-stroke"
               />
@@ -329,9 +347,9 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
                     key={index}
                     cx={cx}
                     cy={cy}
-                    r="6"
+                    r="10"
                     fill="white"
-                    stroke="rgb(37 99 235)"
+                    stroke={locked ? "rgb(22 163 74)" : "rgb(37 99 235)"}
                     strokeWidth="3"
                     vectorEffect="non-scaling-stroke"
                   />
@@ -354,8 +372,16 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
             {detectedQuad ? `${Math.round(confidence * 100)}%` : "بحث"}
           </div>
 
-          <div className="absolute bottom-4 left-1/2 max-w-[85%] -translate-x-1/2 rounded-full border border-white/60 bg-white/92 px-4 py-2 text-center text-xs font-medium text-slate-900 shadow-md backdrop-blur">
+          <div className="absolute bottom-4 left-1/2 max-w-[85%] -translate-x-1/2 rounded-2xl border border-white/60 bg-white/92 px-4 py-2 text-center text-xs font-medium text-slate-900 shadow-md backdrop-blur">
             {status}
+            {detectedQuad && (
+              <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
+                <div
+                  className={`h-full rounded-full transition-all duration-300 ${locked ? "bg-green-600" : "bg-blue-600"}`}
+                  style={{ width: `${Math.max(8, progress * 100)}%` }}
+                />
+              </div>
+            )}
           </div>
 
           {lastPreview && (
@@ -399,6 +425,50 @@ export function CameraCapture({ open, pageCount, lastPreview, onClose, onDone, o
           تم
         </Button>
       </div>
+      {review && (
+        <div className="absolute inset-0 z-10 flex flex-col gap-3 overflow-y-auto bg-white p-3 dark:bg-slate-950">
+          <div>
+            <p className="text-sm font-semibold">راجع حدود الصفحة</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">حرّك الزوايا عند الحاجة، ثم أكّد ليتم قص المنطقة المحددة فقط.</p>
+          </div>
+          <ScanCropper
+            image={review.image}
+            imageWidth={review.width}
+            imageHeight={review.height}
+            quad={review.quad}
+            onChange={(quad) => setReview((r) => (r ? { ...r, quad } : r))}
+          />
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={() => setReview(null)} disabled={confirming}>
+              <RefreshCcw className="h-4 w-4" /> إعادة الالتقاط
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() =>
+                setReview((r) => {
+                  if (!r) return r;
+                  const d = detectDocumentPrecise(r.image, r.width, r.height);
+                  return d ? { ...r, quad: d.quad } : r;
+                })
+              }
+            >
+              <Wand2 className="h-4 w-4" /> إعادة الكشف
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setReview((r) => (r ? { ...r, quad: defaultQuad(r.width, r.height) } : r))}
+            >
+              الصورة كاملة
+            </Button>
+          </div>
+          <Button size="lg" onClick={() => void confirmReview()} disabled={confirming} className="w-full">
+            {confirming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+            تأكيد وقص المنطقة
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
