@@ -4,6 +4,11 @@
 
 هذا الملف يصف الإصدار الحالي الفعلي من التطبيق ويُستخدم قبل أي رفع إلى Google Play Console.
 
+نص صفحة المتجر العربية ومخطط الصور موجودان في:
+`PLAY_STORE_LISTING_AR.md`
+
+> screenshots وFeature Graphic الخاصة بالإصدار يجب أن تعتمد على Build Android المرشح للنشر؛ لا تستخدم لقطة من Lovable Preview لإثبات سلوك Native Scanner أو الحفظ الأصلي.
+
 ## هوية التطبيق
 
 - الاسم: وقِّع
