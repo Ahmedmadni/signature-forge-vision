@@ -7,7 +7,7 @@ export const Route = createFileRoute("/terms")({
       { title: "شروط الاستخدام — وقِّع" },
       { name: "description", content: "شروط استخدام تطبيق وقِّع لتوقيع ملفات PDF ومسح المستندات والحصة المجانية وحدود الخدمة." },
       { property: "og:title", content: "شروط الاستخدام — وقِّع" },
-      { property: "og:description", content: "شروط استخدام تطبيق وقِّع لتوقيع ملفات PDF إلكترونيًا، الحصة المجانية اليومية والخطة المميزة." },
+      { property: "og:description", content: "شروط استخدام تطبيق وقِّع لتوقيع ملفات PDF ومسح المستندات والحصة المجانية وحدود الخدمة." },
       { property: "og:type", content: "article" },
       { name: "twitter:card", content: "summary" },
     ],
