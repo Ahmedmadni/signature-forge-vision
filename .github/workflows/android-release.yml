@@ -18,7 +18,7 @@ permissions:
 jobs:
   signed-aab:
     name: Build signed Android release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
       WAQQI_VERSION_NAME: ${{ inputs.version_name }}
