@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { LogOut, Crown, Moon, Sun, Mail, Settings2, ChevronLeft, Trash2 } from "lucide-react";
+import { LogOut, Moon, Sun, Mail, Settings2, ChevronLeft, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/lib/use-auth";
@@ -7,16 +7,15 @@ import { useUsage } from "@/lib/usage";
 import { useTheme } from "@/lib/theme";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
-import { Paywall } from "@/components/app/Paywall";
 import { getWaqqiAppInfo, type WaqqiAppInfo } from "@/lib/app-info";
 
 export const Route = createFileRoute("/_authenticated/account")({
   head: () => ({
     meta: [
       { title: "حسابي — وقِّع" },
-      { name: "description", content: "أدر حسابك وحصتك اليومية وخطة الاشتراك في تطبيق وقِّع لتوقيع ملفات PDF." },
+      { name: "description", content: "أدر حسابك وحصتك اليومية وإعدادات تطبيق وقِّع." },
       { property: "og:title", content: "حسابي — وقِّع" },
-      { property: "og:description", content: "أدر حسابك وحصتك اليومية وخطة الاشتراك في تطبيق وقِّع لتوقيع ملفات PDF." },
+      { property: "og:description", content: "أدر حسابك وحصتك اليومية وإعدادات تطبيق وقِّع." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -29,7 +28,6 @@ function AccountPage() {
   const usage = useUsage();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
-  const [paywall, setPaywall] = useState(false);
   const [appInfo, setAppInfo] = useState<WaqqiAppInfo | null>(null);
 
   useEffect(() => {
@@ -62,7 +60,7 @@ function AccountPage() {
               {authLoading ? "جارٍ معرفة حالة الحساب…" : user?.email ?? "أنت تستخدم وقِّع كضيف"}
             </p>
             <p className="text-xs text-muted-foreground">
-              {user ? (unlimited ? "الخطة المميزة" : "الخطة المجانية") : "لا تحتاج حسابًا للمسح والتوقيع والحفظ"}
+              {user ? (unlimited ? "استخدام غير محدود" : "الحساب المجاني") : "لا تحتاج حسابًا للمسح والتوقيع والحفظ"}
             </p>
           </div>
         </div>
@@ -86,14 +84,6 @@ function AccountPage() {
           </span>
         </div>
         <Progress className="mt-3" value={unlimited ? 100 : Math.min((used / limit) * 100, 100)} />
-        {user && !unlimited && (
-          <Button
-            className="mt-4 w-full bg-gradient-brand text-primary-foreground shadow-glow"
-            onClick={() => setPaywall(true)}
-          >
-            <Crown className="h-4 w-4" /> الترقية للخطة المميزة
-          </Button>
-        )}
       </section>
 
       <section className="rounded-3xl border border-border bg-card/60 p-2">
@@ -125,7 +115,7 @@ function AccountPage() {
             >
               <span className="flex items-center gap-2">
                 <Trash2 className="h-4 w-4" />
-                طلب حذف الحساب
+                حذف الحساب
               </span>
               <ChevronLeft className="h-4 w-4" />
             </Link>
@@ -167,7 +157,6 @@ function AccountPage() {
         )}
       </section>
 
-      <Paywall open={paywall} onClose={() => setPaywall(false)} used={used} limit={limit} />
     </div>
   );
 }
